@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>지출 입력</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f5efe4;
+        --paper: rgba(255, 252, 247, 0.9);
+        --ink: #16211f;
+        --muted: #5e6a67;
+        --accent: #1f7a52;
+        --accent-strong: #12583a;
+        --line: rgba(22, 33, 31, 0.12);
+        --error-bg: #fff0eb;
+        --error-ink: #8d2c19;
+        --success-bg: #edf8f1;
+        --success-ink: #16603d;
+        font-family: "IBM Plex Sans KR", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(211, 170, 91, 0.28), transparent 30%),
+          radial-gradient(circle at right center, rgba(31, 122, 82, 0.2), transparent 28%),
+          linear-gradient(160deg, #f7f3eb 0%, #efe5d3 100%);
+      }
+
+      .shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .panel {
+        width: min(100%, 640px);
+        padding: 32px;
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        border-radius: 28px;
+        background: var(--paper);
+        backdrop-filter: blur(14px);
+        box-shadow: 0 24px 80px rgba(65, 53, 31, 0.12);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(22, 33, 31, 0.06);
+        color: var(--muted);
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 18px 0 12px;
+        font-size: clamp(2rem, 5vw, 3.25rem);
+        line-height: 1;
+      }
+
+      .intro {
+        margin: 0 0 24px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .form {
+        display: grid;
+        gap: 16px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+      }
+
+      label span {
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      input,
+      textarea,
+      button {
+        font: inherit;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--ink);
+      }
+
+      textarea {
+        resize: vertical;
+      }
+
+      button {
+        margin-top: 8px;
+        padding: 16px 18px;
+        border: 0;
+        border-radius: 18px;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 12px 30px rgba(18, 88, 58, 0.24);
+      }
+
+      button:disabled {
+        opacity: 0.65;
+        cursor: wait;
+      }
+
+      .result {
+        display: none;
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        line-height: 1.6;
+      }
+
+      .result.success {
+        display: block;
+        background: var(--success-bg);
+        color: var(--success-ink);
+      }
+
+      .result.error {
+        display: block;
+        background: var(--error-bg);
+        color: var(--error-ink);
+      }
+
+      @media (max-width: 640px) {
+        .panel {
+          padding: 24px;
+          border-radius: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <div class="eyebrow">Apps Script Web App</div>
+        <h1>지출 정보를 바로 기록하세요</h1>
+        <p class="intro">
+          날짜, 카테고리, 금액, 비고를 입력하면 지정한 Google Spreadsheet에
+          자동으로 한 줄이 추가됩니다.
+        </p>
+
+        <form id="entry-form" class="form">
+          <label>
+            <span>날짜</span>
+            <input type="date" name="date" required />
+          </label>
+
+          <label>
+            <span>카테고리</span>
+            <input
+              type="text"
+              name="category"
+              placeholder="예: 식비, 교통, 쇼핑"
+              required
+            />
+          </label>
+
+          <label>
+            <span>금액</span>
+            <input
+              type="number"
+              name="amount"
+              inputmode="numeric"
+              min="0"
+              step="1"
+              placeholder="예: 12000"
+              required
+            />
+          </label>
+
+          <label>
+            <span>비고</span>
+            <textarea
+              name="note"
+              rows="4"
+              placeholder="예: 점심 약속, 택시비"
+            ></textarea>
+          </label>
+
+          <button type="submit" id="submit-button">Google Sheets에 저장</button>
+        </form>
+
+        <div id="result" class="result"></div>
+      </section>
+    </main>
+
+    <script>
+      const form = document.querySelector("#entry-form");
+      const result = document.querySelector("#result");
+      const submitButton = document.querySelector("#submit-button");
+
+      function setResult(type, message) {
+        result.className = `result ${type}`;
+        result.textContent = message;
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        submitButton.disabled = true;
+        submitButton.textContent = "저장 중...";
+        result.className = "result";
+        result.textContent = "";
+
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+
+        google.script.run
+          .withSuccessHandler((response) => {
+            setResult("success", response.message);
+            form.reset();
+            submitButton.disabled = false;
+            submitButton.textContent = "Google Sheets에 저장";
+          })
+          .withFailureHandler((error) => {
+            setResult("error", error.message || "저장 중 오류가 발생했습니다.");
+            submitButton.disabled = false;
+            submitButton.textContent = "Google Sheets에 저장";
+          })
+          .submitEntry(payload);
+      });
+    </script>
+  </body>
+</html>

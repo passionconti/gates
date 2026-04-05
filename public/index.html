@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>지출 입력</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <div class="eyebrow">Google Sheets Entry App</div>
+        <h1>지출 정보를 바로 기록하세요</h1>
+        <p class="intro">
+          날짜, 카테고리, 금액, 비고를 입력하면 지정한 Google Spreadsheet에
+          자동으로 한 줄이 추가됩니다.
+        </p>
+
+        <div id="config-banner" class="banner hidden"></div>
+
+        <form id="entry-form" class="form">
+          <label>
+            <span>날짜</span>
+            <input type="date" name="date" required />
+          </label>
+
+          <label>
+            <span>카테고리</span>
+            <input
+              type="text"
+              name="category"
+              placeholder="예: 식비, 교통, 쇼핑"
+              required
+            />
+          </label>
+
+          <label>
+            <span>금액</span>
+            <input
+              type="number"
+              name="amount"
+              inputmode="numeric"
+              min="0"
+              step="1"
+              placeholder="예: 12000"
+              required
+            />
+          </label>
+
+          <label>
+            <span>비고</span>
+            <textarea
+              name="note"
+              rows="4"
+              placeholder="예: 점심 약속, 택시비"
+            ></textarea>
+          </label>
+
+          <button type="submit" id="submit-button">Google Sheets에 저장</button>
+        </form>
+
+        <div id="result" class="result hidden"></div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
