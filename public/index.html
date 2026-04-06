@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>가계부 시트 연결</title>
+    <title>가계부 시트 선택</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,11 +16,11 @@
   <body>
     <main class="shell">
       <section class="panel">
-        <div class="eyebrow">Google Auth Sheets Journal</div>
-        <h1>내 계정으로 로그인하고 가계부 시트를 선택하세요</h1>
+        <div class="eyebrow">Step 1</div>
+        <h1>먼저 Google 인증과 저장 대상을 선택하세요</h1>
         <p class="intro">
-          Google 계정으로 인증한 뒤, 편집 가능한 Spreadsheet와 시트 탭을 골라
-          바로 가계부 항목을 기록할 수 있습니다.
+          첫 화면에서 Google 계정으로 인증하고, 데이터를 저장할 Spreadsheet와 시트 탭을
+          고른 뒤 다음 단계로 이동합니다.
         </p>
 
         <div id="config-banner" class="banner hidden"></div>
@@ -28,30 +28,19 @@
         <section class="auth-card">
           <div>
             <h2>1. Google 로그인</h2>
-            <p id="auth-status" class="muted">
-              아직 Google 인증이 완료되지 않았습니다.
-            </p>
+            <p id="auth-status" class="muted">아직 Google 인증이 완료되지 않았습니다.</p>
           </div>
           <div class="auth-actions">
             <button type="button" id="login-button">Google 로그인</button>
-            <button type="button" id="logout-button" class="secondary hidden">
-              연결 해제
-            </button>
+            <button type="button" id="logout-button" class="secondary hidden">연결 해제</button>
           </div>
         </section>
 
-        <form id="entry-form" class="form">
+        <form id="selection-form" class="form">
           <section class="section">
             <div class="section-head">
               <h2>2. 저장 대상 선택</h2>
-              <button
-                type="button"
-                id="refresh-button"
-                class="secondary"
-                disabled
-              >
-                목록 새로고침
-              </button>
+              <button type="button" id="refresh-button" class="secondary" disabled>목록 새로고침</button>
             </div>
 
             <label>
@@ -74,61 +63,17 @@
               href="#"
               target="_blank"
               rel="noreferrer"
-            >
-              선택한 Spreadsheet 열기
-            </a>
+            >선택한 Spreadsheet 열기</a>
           </section>
 
-          <section class="section">
-            <h2>3. 가계부 항목 입력</h2>
-
-            <label>
-              <span>날짜</span>
-              <input type="date" name="date" required />
-            </label>
-
-            <label>
-              <span>카테고리</span>
-              <input
-                type="text"
-                name="category"
-                placeholder="예: 식비, 교통, 쇼핑"
-                required
-              />
-            </label>
-
-            <label>
-              <span>금액</span>
-              <input
-                type="number"
-                name="amount"
-                inputmode="numeric"
-                min="0"
-                step="1"
-                placeholder="예: 12000"
-                required
-              />
-            </label>
-
-            <label>
-              <span>비고</span>
-              <textarea
-                name="note"
-                rows="4"
-                placeholder="예: 점심 약속, 택시비"
-              ></textarea>
-            </label>
-          </section>
-
-          <button type="submit" id="submit-button" disabled>
-            선택한 Google Sheets에 저장
-          </button>
+          <button type="submit" id="continue-button" disabled>다음 단계로 이동</button>
         </form>
 
         <div id="result" class="result hidden"></div>
       </section>
     </main>
 
-    <script src="/app.js"></script>
+    <script src="/shared.js"></script>
+    <script src="/selection.js"></script>
   </body>
 </html>
