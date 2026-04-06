@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>가계부 정보 입력</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel">
+        <div class="eyebrow">Step 2</div>
+        <h1>선택한 시트에 가계부 항목을 입력하세요</h1>
+        <p class="intro">
+          첫 화면에서 고른 Spreadsheet와 시트 탭은 아래에 표시됩니다. 필요하면 대상 선택으로
+          돌아가 다시 고를 수 있습니다.
+        </p>
+
+        <section class="section">
+          <div class="section-head">
+            <h2>저장 대상</h2>
+            <a id="change-target-link" class="sheet-link" href="/">대상 다시 선택</a>
+          </div>
+          <p class="muted">Spreadsheet: <strong id="target-name"></strong></p>
+          <p class="muted">시트 탭: <strong id="target-sheet"></strong></p>
+          <a
+            id="spreadsheet-link"
+            class="sheet-link hidden"
+            href="#"
+            target="_blank"
+            rel="noreferrer"
+          >선택한 Spreadsheet 열기</a>
+        </section>
+
+        <form id="entry-form" class="form">
+          <section class="section">
+            <h2>가계부 항목 입력</h2>
+
+            <label>
+              <span>날짜</span>
+              <input type="date" name="date" required />
+            </label>
+
+            <label>
+              <span>카테고리</span>
+              <input
+                type="text"
+                name="category"
+                placeholder="예: 식비, 교통, 쇼핑"
+                required
+              />
+            </label>
+
+            <label>
+              <span>금액</span>
+              <input
+                type="number"
+                name="amount"
+                inputmode="numeric"
+                min="0"
+                step="1"
+                placeholder="예: 12000"
+                required
+              />
+            </label>
+
+            <label>
+              <span>비고</span>
+              <textarea
+                name="note"
+                rows="4"
+                placeholder="예: 점심 약속, 택시비"
+              ></textarea>
+            </label>
+          </section>
+
+          <button type="submit" id="submit-button">선택한 Google Sheets에 저장</button>
+        </form>
+
+        <div id="result" class="result hidden"></div>
+      </section>
+    </main>
+
+    <script src="/shared.js"></script>
+    <script src="/entry.js"></script>
+  </body>
+</html>
