@@ -24,6 +24,27 @@ npm run dev
 
 브라우저에서 `http://localhost:3000`을 열면 됩니다.
 
+## Makefile 커맨드
+
+```bash
+make install
+make serve
+make dev
+make ngrok
+make up
+make status
+make oauth-origin
+make oauth-open
+make stop
+```
+
+권장 흐름:
+
+1. `make up`
+2. 출력된 ngrok URL 확인
+3. `make oauth-open`으로 Google Cloud Console 자격 증명 페이지 열기
+4. `make oauth-origin` 출력값을 승인된 JavaScript 원본에 붙여 넣기
+
 ## 환경변수
 
 `.env` 파일에 아래 값을 넣어 주세요.
