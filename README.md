@@ -24,6 +24,27 @@ npm run dev
 
 브라우저에서 `http://localhost:3000`을 열면 됩니다.
 
+## Makefile 커맨드
+
+```bash
+make install
+make serve
+make dev
+make ngrok
+make up
+make status
+make oauth-origin
+make oauth-open
+make stop
+```
+
+권장 흐름:
+
+1. `make up`
+2. 출력된 ngrok URL 확인
+3. `make oauth-open`으로 Google Cloud Console 자격 증명 페이지 열기
+4. `make oauth-origin` 출력값을 승인된 JavaScript 원본에 붙여 넣기
+
 ## 환경변수
 
 `.env` 파일에 아래 값을 넣어 주세요.
@@ -53,6 +74,19 @@ GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_here
 - `http://127.0.0.1:3000`
 
 배포 환경이 있다면 해당 URL도 같은 OAuth 클라이언트에 추가해야 합니다.
+
+### ngrok으로 임시 공개하기
+
+1. 로컬에서 앱을 실행합니다.
+2. 별도 터미널에서 `ngrok http 3000`을 실행합니다.
+3. 발급된 `https://...ngrok-free.dev` 주소로 접속합니다.
+4. Google Cloud Console의 OAuth 클라이언트 설정에서 `승인된 JavaScript 원본`에 해당 ngrok 주소를 추가합니다.
+5. 저장 후 ngrok 주소를 새로고침하고 `Google 로그인`을 다시 시도합니다.
+
+참고:
+- ngrok을 같은 컴퓨터에서 실행한다면 `HOST=127.0.0.1` 그대로도 동작합니다.
+- ngrok 무료 도메인은 매번 바뀔 수 있으니 주소가 바뀌면 OAuth 원본도 함께 갱신해야 합니다.
+- 처음 접속하는 사용자는 ngrok 경고 페이지에서 `Visit Site`를 한 번 눌러야 할 수 있습니다.
 
 ### 필요한 권한
 
