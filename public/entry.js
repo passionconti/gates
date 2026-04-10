@@ -36,7 +36,11 @@ function setLoadingState(active, label = "입력한 항목 전체 저장") {
 }
 
 function getTodayDateText() {
-  return new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const year = String(today.getFullYear());
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const date = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${date}`;
 }
 
 function getGoogleApiHeaders() {
@@ -62,9 +66,7 @@ async function fetchJson(url, options = {}) {
   return data;
 }
 
-async function appendEntries(spreadsheetId, sheetName, rows) {
-  const range = `${sheetName}!A:I`;
-
+async function appendToSheet(spreadsheetId, range, rows) {
   return fetchJson(
     `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
     {
@@ -76,6 +78,42 @@ async function appendEntries(spreadsheetId, sheetName, rows) {
       body: JSON.stringify({ values: rows }),
     },
   );
+}
+
+async function fetchUserProfile() {
+  try {
+    const profile = await fetchJson("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: getGoogleApiHeaders(),
+    });
+
+    return {
+      name: String(profile.name || "").trim(),
+      email: String(profile.email || "").trim(),
+    };
+  } catch (error) {
+    return {
+      name: "",
+      email: "",
+    };
+  }
+}
+
+async function appendEntries(spreadsheetId, entries) {
+  const actor = await fetchUserProfile();
+  const logsRows = GatesEntryHelpers.buildLogsRowsPayload(entries, { actor });
+  const monthlyPayloads = GatesEntryHelpers.buildMonthlySheetPayloads(entries);
+
+  await appendToSheet(spreadsheetId, "logs!A:K", logsRows);
+
+  for (const payload of monthlyPayloads) {
+    await appendToSheet(spreadsheetId, `${payload.sheetName}!A:H`, payload.rows);
+  }
+
+  return {
+    logsCount: logsRows.length,
+    monthlySheetNames: monthlyPayloads.map((payload) => payload.sheetName),
+    actor,
+  };
 }
 
 function ensureSelection() {
@@ -92,7 +130,7 @@ function ensureSelection() {
 
 function populateSelection(selection) {
   targetName.textContent = selection.spreadsheetName || selection.spreadsheetId;
-  targetSheet.textContent = selection.sheetName;
+  targetSheet.textContent = "입력한 날짜 기준 월 시트에 자동 분류";
 
   if (selection.webViewLink) {
     spreadsheetLink.href = selection.webViewLink;
@@ -231,10 +269,14 @@ form.addEventListener("submit", async (event) => {
   }
 
   try {
-    const rows = GatesEntryHelpers.buildEntryRowsPayload(collectEntryDrafts());
-    await appendEntries(selection.spreadsheetId, selection.sheetName, rows);
+    const saveResult = await appendEntries(selection.spreadsheetId, collectEntryDrafts());
     resetRows();
-    setResult("success", `${rows.length}건의 가계부 항목을 선택한 Google Spreadsheet에 저장했습니다.`);
+    const actorLabel = saveResult.actor.email || saveResult.actor.name;
+    const actorSuffix = actorLabel ? ` 입력자: ${actorLabel}.` : "";
+    setResult(
+      "success",
+      `${saveResult.logsCount}건을 logs 시트에 저장했고 ${saveResult.monthlySheetNames.join(", ")} 시트에 반영했습니다.${actorSuffix}`,
+    );
   } catch (error) {
     setResult("error", error.message);
   } finally {

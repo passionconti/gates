@@ -11,7 +11,7 @@
   const REQUIRED_FIELDS = [
     ['date', '날짜'],
     ['type', '수입/지출 구분'],
-    ['category', '카테고리'],
+    ['category', '종류'],
     ['description', '내용'],
     ['amount', '금액'],
   ];
@@ -75,6 +75,17 @@
     return amount;
   }
 
+  function normalizeStoredDate(dateText, rowNumber) {
+    const normalized = toTrimmedString(dateText);
+    const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (!match) {
+      throw new Error(`${rowNumber}번째 항목의 날짜 형식을 다시 확인해 주세요.`);
+    }
+
+    return `${match[1].slice(-2)}-${match[2]}-${match[3]}`;
+  }
+
   function validateRequiredFields(entry, rowNumber) {
     for (const [field, label] of REQUIRED_FIELDS) {
       if (!toTrimmedString(entry[field])) {
@@ -87,12 +98,31 @@
     }
   }
 
-  function buildEntryRow(entry, rowNumber, timestamp) {
+  function getNonEmptyDrafts(entries) {
+    const drafts = Array.isArray(entries) ? entries : [];
+    const nonEmptyDrafts = drafts.filter((entry) => !isEntryDraftEmpty(entry));
+
+    if (nonEmptyDrafts.length === 0) {
+      throw new Error('저장할 가계부 항목을 한 건 이상 입력해 주세요.');
+    }
+
+    return nonEmptyDrafts;
+  }
+
+  function sanitizeActor(actor) {
+    return {
+      name: toTrimmedString(actor?.name),
+      email: toTrimmedString(actor?.email),
+    };
+  }
+
+  function buildLogsRow(entry, rowNumber, timestamp, actor) {
     const draft = sanitizeEntryDraft(entry);
     validateRequiredFields(draft, rowNumber);
+    const sanitizedActor = sanitizeActor(actor);
 
     return [
-      draft.date,
+      normalizeStoredDate(draft.date, rowNumber),
       draft.type,
       draft.category,
       draft.description,
@@ -101,20 +131,69 @@
       parseAmount(draft.amount, rowNumber),
       draft.note,
       timestamp,
+      sanitizedActor.name,
+      sanitizedActor.email,
     ];
   }
 
-  function buildEntryRowsPayload(entries, options = {}) {
-    const drafts = Array.isArray(entries) ? entries : [];
-    const nonEmptyDrafts = drafts.filter((entry) => !isEntryDraftEmpty(entry));
+  function formatMonthlySheetName(dateText) {
+    const date = toTrimmedString(dateText);
+    const match = date.match(/^\d{4}-(\d{2})-\d{2}$/);
 
-    if (nonEmptyDrafts.length === 0) {
-      throw new Error('저장할 가계부 항목을 한 건 이상 입력해 주세요.');
+    if (!match) {
+      return '';
     }
 
-    const timestamp = options.now || new Date().toISOString();
+    return `${Number(match[1])}월`;
+  }
 
-    return nonEmptyDrafts.map((entry, index) => buildEntryRow(entry, index + 1, timestamp));
+  function buildMonthlySheetRow(entry, rowNumber) {
+    const draft = sanitizeEntryDraft(entry);
+    validateRequiredFields(draft, rowNumber);
+    const amount = parseAmount(draft.amount, rowNumber);
+
+    return {
+      sheetName: formatMonthlySheetName(draft.date),
+      row: [
+        normalizeStoredDate(draft.date, rowNumber),
+        draft.category,
+        draft.description,
+        draft.type === '지출' ? amount : '',
+        draft.type === '수입' ? amount : '',
+        draft.owner,
+        draft.paymentMethod,
+        draft.note,
+      ],
+    };
+  }
+
+  function buildLogsRowsPayload(entries, options = {}) {
+    const timestamp = options.now || new Date().toISOString();
+    const actor = sanitizeActor(options.actor);
+    return getNonEmptyDrafts(entries).map((entry, index) => buildLogsRow(entry, index + 1, timestamp, actor));
+  }
+
+  function buildMonthlySheetPayloads(entries) {
+    const groupedRows = new Map();
+
+    getNonEmptyDrafts(entries).forEach((entry, index) => {
+      const payload = buildMonthlySheetRow(entry, index + 1);
+
+      if (!payload.sheetName) {
+        throw new Error(`${index + 1}번째 항목의 날짜 형식을 다시 확인해 주세요.`);
+      }
+
+      if (!groupedRows.has(payload.sheetName)) {
+        groupedRows.set(payload.sheetName, []);
+      }
+
+      groupedRows.get(payload.sheetName).push(payload.row);
+    });
+
+    return Array.from(groupedRows.entries()).map(([sheetName, rows]) => ({
+      sheetName,
+      rows,
+    }));
   }
 
   return {
@@ -122,7 +201,8 @@
     createEmptyEntryDraft,
     sanitizeEntryDraft,
     isEntryDraftEmpty,
-    buildEntryRow,
-    buildEntryRowsPayload,
+    formatMonthlySheetName,
+    buildLogsRowsPayload,
+    buildMonthlySheetPayloads,
   };
 });
