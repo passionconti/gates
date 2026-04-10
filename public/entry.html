@@ -14,12 +14,12 @@
   </head>
   <body>
     <main class="shell">
-      <section class="panel">
+      <section class="panel panel-wide">
         <div class="eyebrow">Step 2</div>
-        <h1>선택한 시트에 가계부 항목을 입력하세요</h1>
+        <h1>선택한 시트에 가계부 항목을 여러 건 입력하세요</h1>
         <p class="intro">
-          첫 화면에서 고른 Spreadsheet와 시트 탭은 아래에 표시됩니다. 필요하면 대상 선택으로
-          돌아가 다시 고를 수 있습니다.
+          한 번에 여러 줄을 입력한 뒤 한 번에 저장할 수 있습니다. 첫 화면에서 고른 Spreadsheet와
+          시트 탭은 아래에 표시되며, 필요하면 대상 선택으로 돌아가 다시 고를 수 있습니다.
         </p>
 
         <section class="section">
@@ -40,47 +40,38 @@
 
         <form id="entry-form" class="form">
           <section class="section">
-            <h2>가계부 항목 입력</h2>
+            <div class="section-head">
+              <div>
+                <h2>가계부 항목 입력</h2>
+                <p class="muted compact">
+                  테이블에서 여러 줄을 바로 입력하고, 필요하면 행 추가/삭제 후 한 번에 저장할 수
+                  있습니다.
+                </p>
+              </div>
+              <button type="button" id="add-row-button" class="secondary action-button">+ 행 추가</button>
+            </div>
 
-            <label>
-              <span>날짜</span>
-              <input type="date" name="date" required />
-            </label>
-
-            <label>
-              <span>카테고리</span>
-              <input
-                type="text"
-                name="category"
-                placeholder="예: 식비, 교통, 쇼핑"
-                required
-              />
-            </label>
-
-            <label>
-              <span>금액</span>
-              <input
-                type="number"
-                name="amount"
-                inputmode="numeric"
-                min="0"
-                step="1"
-                placeholder="예: 12000"
-                required
-              />
-            </label>
-
-            <label>
-              <span>비고</span>
-              <textarea
-                name="note"
-                rows="4"
-                placeholder="예: 점심 약속, 택시비"
-              ></textarea>
-            </label>
+            <div class="entry-table-wrap">
+              <table class="entry-table">
+                <thead>
+                  <tr>
+                    <th scope="col">날짜</th>
+                    <th scope="col">구분</th>
+                    <th scope="col">카테고리</th>
+                    <th scope="col">내용</th>
+                    <th scope="col">명의</th>
+                    <th scope="col">지출방식</th>
+                    <th scope="col">금액</th>
+                    <th scope="col">비고</th>
+                    <th scope="col">삭제</th>
+                  </tr>
+                </thead>
+                <tbody id="entry-rows"></tbody>
+              </table>
+            </div>
           </section>
 
-          <button type="submit" id="submit-button">선택한 Google Sheets에 저장</button>
+          <button type="submit" id="submit-button">입력한 항목 전체 저장</button>
         </form>
 
         <div id="result" class="result hidden"></div>
@@ -88,6 +79,7 @@
     </main>
 
     <script src="/shared.js"></script>
+    <script src="/entry-helpers.js"></script>
     <script src="/entry.js"></script>
   </body>
 </html>

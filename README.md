@@ -12,7 +12,8 @@ Google 계정으로 로그인한 뒤, 내가 편집 가능한 Google Spreadsheet
 - 본인 Google 계정으로 OAuth 인증을 진행합니다.
 - 편집 가능한 Google Spreadsheet 목록을 불러옵니다.
 - 업데이트할 Spreadsheet 파일과 시트 탭을 선택합니다.
-- 날짜, 카테고리, 금액, 비고를 선택한 시트에 한 줄씩 추가합니다.
+- 여러 건의 가계부 항목을 한 번에 입력해 선택한 시트에 저장합니다.
+- 각 항목은 날짜, 수입/지출 구분, 카테고리, 내용, 명의, 지출방식, 금액, 비고를 포함합니다.
 
 ## Node 앱 실행 방법
 
@@ -52,7 +53,7 @@ make stop
 ```env
 PORT=3000
 HOST=127.0.0.1
-GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_here
+GOOGLE_OAUTH_CLIENT_ID=your_g...here
 ```
 
 ## Google OAuth 설정
@@ -103,12 +104,13 @@ GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_here
 2. 본인 계정으로 인증을 완료합니다.
 3. 목록에서 편집 가능한 Spreadsheet 파일을 선택합니다.
 4. 그 안에서 기록할 시트 탭을 선택합니다.
-5. 날짜, 카테고리, 금액, 비고를 입력합니다.
-6. 저장 버튼을 누르면 선택한 시트의 `A:E` 열에 다음 순서로 추가됩니다.
+5. 입력 화면에서 여러 줄의 가계부 항목을 작성합니다.
+6. `+ 행 추가` 버튼으로 입력 줄을 늘릴 수 있습니다.
+7. 저장 버튼을 누르면 선택한 시트의 `A:I` 열에 다음 순서로 여러 행이 추가됩니다.
 
-| A | B | C | D | E |
-|---|---|---|---|---|
-| 날짜 | 카테고리 | 금액 | 비고 | 저장시각 |
+| A | B | C | D | E | F | G | H | I |
+|---|---|---|---|---|---|---|---|---|
+| 날짜 | 수입/지출 | 카테고리 | 내용 | 명의 | 지출방식 | 금액 | 비고 | 저장시각 |
 
 ## 서버 API
 
@@ -123,32 +125,3 @@ GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_here
 ## Apps Script 버전
 
 조직 정책 때문에 OAuth 클라이언트 설정 대신 Apps Script 웹앱이 더 편하면 `apps-script/` 버전을 그대로 사용할 수 있습니다.
-
-### 파일 구성
-
-- `apps-script/Code.gs`: 시트에 행을 추가하는 서버 코드
-- `apps-script/Index.html`: 웹 입력 폼
-- `apps-script/appsscript.json`: Apps Script 설정
-
-### 설정 방법
-
-1. Google Spreadsheet를 하나 만듭니다.
-2. 메뉴에서 `확장 프로그램` > `Apps Script`를 엽니다.
-3. 기본으로 생성된 `Code.gs` 내용을 지우고 `apps-script/Code.gs` 내용을 붙여 넣습니다.
-4. `Index.html` 파일을 새로 만들고 `apps-script/Index.html` 내용을 붙여 넣습니다.
-5. `프로젝트 설정` 또는 `스크립트 속성`에서 아래 값을 설정합니다.
-
-```text
-SPREADSHEET_ID=대상_스프레드시트_ID
-SHEET_NAME=기록할_시트_탭_이름
-```
-
-### 처음 한 번 실행
-
-Apps Script 편집기에서 아래 함수를 한 번 실행하세요.
-
-```text
-setupSheet
-```
-
-이 함수는 시트가 비어 있으면 헤더 행 `날짜 / 카테고리 / 금액 / 비고 / 저장시각`을 만들어 줍니다.
