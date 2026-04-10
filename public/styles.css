@@ -46,7 +46,7 @@ body {
 }
 
 .panel-wide {
-  width: min(100%, 1040px);
+  width: min(100%, 1200px);
 }
 
 .eyebrow {
@@ -62,8 +62,7 @@ body {
 }
 
 h1,
-h2,
-h3 {
+h2 {
   margin: 0;
 }
 
@@ -75,10 +74,6 @@ h1 {
 
 h2 {
   font-size: 1.05rem;
-}
-
-h3 {
-  font-size: 1rem;
 }
 
 .intro,
@@ -110,8 +105,7 @@ h3 {
 }
 
 .auth-actions,
-.section-head,
-.entry-row-header {
+.section-head {
   display: flex;
   gap: 12px;
   align-items: center;
@@ -122,16 +116,6 @@ h3 {
 .form {
   display: grid;
   gap: 18px;
-}
-
-label {
-  display: grid;
-  gap: 8px;
-}
-
-label span {
-  font-size: 0.95rem;
-  font-weight: 600;
 }
 
 input,
@@ -145,10 +129,10 @@ input,
 textarea,
 select {
   width: 100%;
-  padding: 14px 16px;
+  padding: 12px 12px;
   border: 1px solid var(--line);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.72);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
   color: var(--ink);
   transition:
     border-color 160ms ease,
@@ -163,10 +147,6 @@ select:focus {
   border-color: rgba(31, 122, 82, 0.45);
   box-shadow: 0 0 0 4px rgba(31, 122, 82, 0.1);
   transform: translateY(-1px);
-}
-
-textarea {
-  resize: vertical;
 }
 
 button {
@@ -204,8 +184,8 @@ button.secondary {
 
 .action-button,
 .remove-row-button {
-  padding: 12px 16px;
-  border-radius: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
 }
 
 .banner,
@@ -240,53 +220,72 @@ button.secondary {
   text-decoration: underline;
 }
 
-.entry-rows {
-  display: grid;
-  gap: 16px;
-}
-
-.entry-row {
-  display: grid;
-  gap: 16px;
-  padding: 18px;
+.entry-table-wrap {
+  overflow-x: auto;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.55);
 }
 
-.entry-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+.entry-table {
+  width: 100%;
+  min-width: 1040px;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
-.entry-grid-note {
-  grid-column: 1 / -1;
+.entry-table thead th {
+  position: sticky;
+  top: 0;
+  padding: 14px 12px;
+  background: rgba(245, 239, 228, 0.95);
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.entry-table tbody td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(22, 33, 31, 0.08);
+  vertical-align: middle;
+}
+
+.entry-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.entry-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.entry-table .action-cell {
+  width: 88px;
+  text-align: center;
+}
+
+.entry-table .remove-row-button {
+  width: 100%;
 }
 
 .hidden {
   display: none;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
   .panel {
     padding: 24px;
     border-radius: 24px;
   }
 
   .auth-actions,
-  .section-head,
-  .entry-row-header {
+  .section-head {
     align-items: stretch;
   }
 
   .auth-actions button,
-  .section-head button,
-  .entry-row-header button {
+  .section-head button {
     width: 100%;
-  }
-
-  .entry-grid {
-    grid-template-columns: 1fr;
   }
 }

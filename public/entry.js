@@ -113,68 +113,54 @@ function buildSelectOptions(options, selectedValue) {
 }
 
 function createRowElement(draft, rowId) {
-  const article = document.createElement("article");
-  article.className = "entry-row";
-  article.dataset.rowId = String(rowId);
-  article.innerHTML = `
-    <div class="entry-row-header">
-      <h3 class="entry-row-title">항목</h3>
+  const row = document.createElement("tr");
+  row.className = "entry-row";
+  row.dataset.rowId = String(rowId);
+  row.innerHTML = `
+    <td data-label="날짜">
+      <input type="date" name="date" value="${draft.date}" required />
+    </td>
+    <td data-label="구분">
+      <select name="type" required>
+        ${buildSelectOptions(GatesEntryHelpers.ENTRY_TYPE_OPTIONS, draft.type)}
+      </select>
+    </td>
+    <td data-label="카테고리">
+      <input type="text" name="category" value="${draft.category}" placeholder="식비" required />
+    </td>
+    <td data-label="내용">
+      <input type="text" name="description" value="${draft.description}" placeholder="점심 회의" required />
+    </td>
+    <td data-label="명의">
+      <input type="text" name="owner" value="${draft.owner}" placeholder="본인" />
+    </td>
+    <td data-label="지출방식">
+      <select name="paymentMethod">
+        ${buildSelectOptions(PAYMENT_METHOD_OPTIONS, draft.paymentMethod)}
+      </select>
+    </td>
+    <td data-label="금액">
+      <input type="number" name="amount" value="${draft.amount}" inputmode="numeric" min="0" step="1" placeholder="12000" required />
+    </td>
+    <td data-label="비고">
+      <input type="text" name="note" value="${draft.note}" placeholder="메모" />
+    </td>
+    <td data-label="삭제" class="action-cell">
       <button type="button" class="secondary remove-row-button">삭제</button>
-    </div>
-    <div class="entry-grid">
-      <label>
-        <span>날짜</span>
-        <input type="date" name="date" value="${draft.date}" required />
-      </label>
-      <label>
-        <span>수입/지출</span>
-        <select name="type" required>
-          ${buildSelectOptions(GatesEntryHelpers.ENTRY_TYPE_OPTIONS, draft.type)}
-        </select>
-      </label>
-      <label>
-        <span>카테고리</span>
-        <input type="text" name="category" value="${draft.category}" placeholder="예: 식비, 교통, 급여" required />
-      </label>
-      <label>
-        <span>내용</span>
-        <input type="text" name="description" value="${draft.description}" placeholder="예: 점심, 택시, 월급" required />
-      </label>
-      <label>
-        <span>명의</span>
-        <input type="text" name="owner" value="${draft.owner}" placeholder="예: 본인, 법인카드" />
-      </label>
-      <label>
-        <span>지출방식</span>
-        <select name="paymentMethod">
-          ${buildSelectOptions(PAYMENT_METHOD_OPTIONS, draft.paymentMethod)}
-        </select>
-      </label>
-      <label>
-        <span>금액</span>
-        <input type="number" name="amount" value="${draft.amount}" inputmode="numeric" min="0" step="1" placeholder="예: 12000" required />
-      </label>
-      <label class="entry-grid-note">
-        <span>비고</span>
-        <input type="text" name="note" value="${draft.note}" placeholder="예: 팀 점심, 교통비 정산" />
-      </label>
-    </div>
+    </td>
   `;
-  return article;
+  return row;
 }
 
-function updateRowLabels() {
+function updateRowButtons() {
   const rows = Array.from(entryRows.querySelectorAll(".entry-row"));
 
   rows.forEach((row, index) => {
-    const title = row.querySelector(".entry-row-title");
-    if (title) {
-      title.textContent = `${index + 1}번째 항목`;
-    }
-
+    row.dataset.rowIndex = String(index + 1);
     const removeButton = row.querySelector(".remove-row-button");
     if (removeButton) {
       removeButton.disabled = rows.length === 1;
+      removeButton.setAttribute("aria-label", `${index + 1}번째 항목 삭제`);
     }
   });
 }
@@ -188,7 +174,7 @@ function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDat
     state.nextRowId++,
   );
   entryRows.append(row);
-  updateRowLabels();
+  updateRowButtons();
   return row;
 }
 
@@ -199,7 +185,7 @@ function removeEntryRow(button) {
   }
 
   row.remove();
-  updateRowLabels();
+  updateRowButtons();
 }
 
 function collectEntryDrafts() {

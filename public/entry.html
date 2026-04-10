@@ -44,14 +44,31 @@
               <div>
                 <h2>가계부 항목 입력</h2>
                 <p class="muted compact">
-                  날짜, 수입/지출 구분, 카테고리, 내용, 명의, 지출방식, 금액, 비고를 입력한 뒤
-                  전체 저장을 눌러 주세요.
+                  테이블에서 여러 줄을 바로 입력하고, 필요하면 행 추가/삭제 후 한 번에 저장할 수
+                  있습니다.
                 </p>
               </div>
               <button type="button" id="add-row-button" class="secondary action-button">+ 행 추가</button>
             </div>
 
-            <div id="entry-rows" class="entry-rows"></div>
+            <div class="entry-table-wrap">
+              <table class="entry-table">
+                <thead>
+                  <tr>
+                    <th scope="col">날짜</th>
+                    <th scope="col">구분</th>
+                    <th scope="col">카테고리</th>
+                    <th scope="col">내용</th>
+                    <th scope="col">명의</th>
+                    <th scope="col">지출방식</th>
+                    <th scope="col">금액</th>
+                    <th scope="col">비고</th>
+                    <th scope="col">삭제</th>
+                  </tr>
+                </thead>
+                <tbody id="entry-rows"></tbody>
+              </table>
+            </div>
           </section>
 
           <button type="submit" id="submit-button">입력한 항목 전체 저장</button>
