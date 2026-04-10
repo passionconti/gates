@@ -4,7 +4,6 @@ const submitButton = document.querySelector("#submit-button");
 const addRowButton = document.querySelector("#add-row-button");
 const entryRows = document.querySelector("#entry-rows");
 const targetName = document.querySelector("#target-name");
-const targetSheet = document.querySelector("#target-sheet");
 const spreadsheetLink = document.querySelector("#spreadsheet-link");
 const changeTargetLink = document.querySelector("#change-target-link");
 
@@ -81,6 +80,8 @@ async function appendToSheet(spreadsheetId, range, rows) {
 }
 
 async function fetchUserProfile() {
+  const authSession = GatesShared.readAuthSession(window.sessionStorage);
+
   try {
     const profile = await fetchJson("https://www.googleapis.com/oauth2/v2/userinfo", {
       headers: getGoogleApiHeaders(),
@@ -92,10 +93,51 @@ async function fetchUserProfile() {
     };
   } catch (error) {
     return {
-      name: "",
-      email: "",
+      name: String(authSession?.name || "").trim(),
+      email: String(authSession?.email || "").trim(),
     };
   }
+}
+
+function getLogsHeaderRow() {
+  return [[
+    "date",
+    "type",
+    "category",
+    "description",
+    "owner",
+    "paymentMethod",
+    "amount",
+    "note",
+    "savedAt",
+    "actorName",
+    "actorEmail",
+  ]];
+}
+
+async function ensureLogsHeader(spreadsheetId) {
+  const data = await fetchJson(
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent("logs!A1:K1")}`,
+    {
+      headers: getGoogleApiHeaders(),
+    },
+  );
+
+  if ((data.values || []).length > 0) {
+    return;
+  }
+
+  await fetchJson(
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent("logs!A1:K1")}?valueInputOption=RAW`,
+    {
+      method: "PUT",
+      headers: {
+        ...getGoogleApiHeaders(),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ values: getLogsHeaderRow() }),
+    },
+  );
 }
 
 async function appendEntries(spreadsheetId, entries) {
@@ -103,6 +145,7 @@ async function appendEntries(spreadsheetId, entries) {
   const logsRows = GatesEntryHelpers.buildLogsRowsPayload(entries, { actor });
   const monthlyPayloads = GatesEntryHelpers.buildMonthlySheetPayloads(entries);
 
+  await ensureLogsHeader(spreadsheetId);
   await appendToSheet(spreadsheetId, "logs!A:K", logsRows);
 
   for (const payload of monthlyPayloads) {
@@ -130,7 +173,6 @@ function ensureSelection() {
 
 function populateSelection(selection) {
   targetName.textContent = selection.spreadsheetName || selection.spreadsheetId;
-  targetSheet.textContent = "입력한 날짜 기준 월 시트에 자동 분류";
 
   if (selection.webViewLink) {
     spreadsheetLink.href = selection.webViewLink;

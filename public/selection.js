@@ -139,12 +139,33 @@ async function loadConfig() {
   }
 }
 
-function saveAuthSession(accessToken, expiresIn) {
+async function fetchUserProfile() {
+  try {
+    const profile = await fetchJson("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: getGoogleApiHeaders(),
+    });
+
+    return {
+      name: String(profile.name || "").trim(),
+      email: String(profile.email || "").trim(),
+    };
+  } catch (error) {
+    return {
+      name: "",
+      email: "",
+    };
+  }
+}
+
+async function saveAuthSession(accessToken, expiresIn) {
   const expiresAt = Number.isFinite(Number(expiresIn)) ? Date.now() + Number(expiresIn) * 1000 : null;
+  const profile = await fetchUserProfile();
 
   GatesShared.persistAuthSession(window.sessionStorage, {
     accessToken,
     expiresAt,
+    name: profile.name,
+    email: profile.email,
   });
 }
 
@@ -174,7 +195,7 @@ function initializeGoogleAuth() {
       }
 
       state.accessToken = response.access_token;
-      saveAuthSession(response.access_token, response.expires_in);
+      await saveAuthSession(response.access_token, response.expires_in);
       clearResult();
       updateUiState();
 

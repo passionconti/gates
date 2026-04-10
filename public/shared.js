@@ -40,6 +40,8 @@
     return {
       accessToken: toTrimmedString(session.accessToken),
       expiresAt: Number.isFinite(expiresAt) ? expiresAt : null,
+      name: toTrimmedString(session.name),
+      email: toTrimmedString(session.email),
     };
   }
 

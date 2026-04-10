@@ -72,11 +72,15 @@ test('persistAuthSession stores access token data for the next page', () => {
   persistAuthSession(storage, {
     accessToken: 'token-123',
     expiresAt: 1234567890,
+    name: 'Ryan',
+    email: 'ryan@example.com',
   });
 
   assert.deepEqual(readAuthSession(storage), {
     accessToken: 'token-123',
     expiresAt: 1234567890,
+    name: 'Ryan',
+    email: 'ryan@example.com',
   });
 });
 
@@ -86,6 +90,8 @@ test('clearAuthSession removes saved access token data', () => {
   persistAuthSession(storage, {
     accessToken: 'token-123',
     expiresAt: 1234567890,
+    name: 'Ryan',
+    email: 'ryan@example.com',
   });
   clearAuthSession(storage);
 
