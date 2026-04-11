@@ -6,6 +6,8 @@ const {
   buildMonthlySheetPayloads,
   createEmptyEntryDraft,
   formatMonthlySheetName,
+  getLogsHeaderRow,
+  isLogsHeaderRowComplete,
 } = require('../public/entry-helpers.js');
 
 test('createEmptyEntryDraft returns default values for a new row', () => {
@@ -24,6 +26,32 @@ test('createEmptyEntryDraft returns default values for a new row', () => {
 test('formatMonthlySheetName converts the date to the M월 format', () => {
   assert.equal(formatMonthlySheetName('2026-04-10'), '4월');
   assert.equal(formatMonthlySheetName('2026-11-01'), '11월');
+});
+
+test('getLogsHeaderRow returns the actorname column expected by the logs sheet', () => {
+  assert.deepEqual(getLogsHeaderRow(), [
+    'date',
+    'type',
+    'category',
+    'description',
+    'owner',
+    'paymentMethod',
+    'amount',
+    'note',
+    'savedAt',
+    'actorname',
+  ]);
+});
+
+test('isLogsHeaderRowComplete detects older logs headers without actorname column', () => {
+  assert.equal(
+    isLogsHeaderRowComplete(['date', 'type', 'category', 'description', 'owner', 'paymentMethod', 'amount', 'note', 'savedAt']),
+    false,
+  );
+  assert.equal(
+    isLogsHeaderRowComplete(['date', 'type', 'category', 'description', 'owner', 'paymentMethod', 'amount', 'note', 'savedAt', 'actorname']),
+    true,
+  );
 });
 
 test('buildLogsRowsPayload normalizes stored dates to yy-mm-dd', () => {
@@ -50,7 +78,6 @@ test('buildLogsRowsPayload builds raw rows for the logs sheet with actor informa
   const now = '2026-04-10T08:30:00.000Z';
   const actor = {
     name: 'Ryan',
-    email: 'ryan@example.com',
   };
   const rows = buildLogsRowsPayload(
     [
@@ -79,8 +106,8 @@ test('buildLogsRowsPayload builds raw rows for the logs sheet with actor informa
   );
 
   assert.deepEqual(rows, [
-    ['26-04-10', '지출', '식비', '점심', '라이언', '카드', 12000, '팀 점심', now, 'Ryan', 'ryan@example.com'],
-    ['26-04-10', '수입', '급여', '월급', '법인', '계좌이체', 3000000, '', now, 'Ryan', 'ryan@example.com'],
+    ['26-04-10', '지출', '식비', '점심', '라이언', '카드', 12000, '팀 점심', now, 'Ryan'],
+    ['26-04-10', '수입', '급여', '월급', '법인', '계좌이체', 3000000, '', now, 'Ryan'],
   ]);
 });
 
@@ -152,7 +179,7 @@ test('buildLogsRowsPayload ignores rows that are completely empty', () => {
   );
 
   assert.deepEqual(rows, [
-    ['26-04-10', '지출', '교통', '택시', '', '카드', 18000, '', '2026-04-10T08:30:00.000Z', '', ''],
+    ['26-04-10', '지출', '교통', '택시', '', '카드', 18000, '', '2026-04-10T08:30:00.000Z', ''],
   ]);
 });
 

@@ -8,6 +8,18 @@
   global.GatesEntryHelpers = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const ENTRY_TYPE_OPTIONS = ['수입', '지출'];
+  const LOGS_HEADER_ROW = [
+    'date',
+    'type',
+    'category',
+    'description',
+    'owner',
+    'paymentMethod',
+    'amount',
+    'note',
+    'savedAt',
+    'actorname',
+  ];
   const REQUIRED_FIELDS = [
     ['date', '날짜'],
     ['type', '수입/지출 구분'],
@@ -112,8 +124,21 @@
   function sanitizeActor(actor) {
     return {
       name: toTrimmedString(actor?.name),
-      email: toTrimmedString(actor?.email),
     };
+  }
+
+  function getLogsHeaderRow() {
+    return [...LOGS_HEADER_ROW];
+  }
+
+  function normalizeHeaderCell(value) {
+    return toTrimmedString(value).toLowerCase();
+  }
+
+  function isLogsHeaderRowComplete(row) {
+    const headerRow = Array.isArray(row) ? row : [];
+
+    return LOGS_HEADER_ROW.every((cell, index) => normalizeHeaderCell(headerRow[index]) === normalizeHeaderCell(cell));
   }
 
   function buildLogsRow(entry, rowNumber, timestamp, actor) {
@@ -132,7 +157,6 @@
       draft.note,
       timestamp,
       sanitizedActor.name,
-      sanitizedActor.email,
     ];
   }
 
@@ -201,6 +225,8 @@
     createEmptyEntryDraft,
     sanitizeEntryDraft,
     isEntryDraftEmpty,
+    getLogsHeaderRow,
+    isLogsHeaderRowComplete,
     formatMonthlySheetName,
     buildLogsRowsPayload,
     buildMonthlySheetPayloads,

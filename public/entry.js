@@ -79,40 +79,22 @@ async function appendToSheet(spreadsheetId, range, rows) {
   );
 }
 
-async function fetchUserProfile() {
+async function fetchActorProfile() {
   const authSession = GatesShared.readAuthSession(window.sessionStorage);
 
   try {
-    const profile = await fetchJson("https://www.googleapis.com/oauth2/v2/userinfo", {
+    const data = await fetchJson("https://www.googleapis.com/drive/v3/about?fields=user(displayName)", {
       headers: getGoogleApiHeaders(),
     });
 
     return {
-      name: String(profile.name || "").trim(),
-      email: String(profile.email || "").trim(),
+      name: String(data.user?.displayName || authSession?.name || "").trim(),
     };
   } catch (error) {
     return {
       name: String(authSession?.name || "").trim(),
-      email: String(authSession?.email || "").trim(),
     };
   }
-}
-
-function getLogsHeaderRow() {
-  return [[
-    "date",
-    "type",
-    "category",
-    "description",
-    "owner",
-    "paymentMethod",
-    "amount",
-    "note",
-    "savedAt",
-    "actorName",
-    "actorEmail",
-  ]];
 }
 
 async function ensureLogsHeader(spreadsheetId) {
@@ -123,7 +105,8 @@ async function ensureLogsHeader(spreadsheetId) {
     },
   );
 
-  if ((data.values || []).length > 0) {
+  const currentHeader = data.values?.[0] || [];
+  if (GatesEntryHelpers.isLogsHeaderRowComplete(currentHeader)) {
     return;
   }
 
@@ -135,18 +118,18 @@ async function ensureLogsHeader(spreadsheetId) {
         ...getGoogleApiHeaders(),
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ values: getLogsHeaderRow() }),
+      body: JSON.stringify({ values: [[...GatesEntryHelpers.getLogsHeaderRow(), ""]] }),
     },
   );
 }
 
 async function appendEntries(spreadsheetId, entries) {
-  const actor = await fetchUserProfile();
+  const actor = await fetchActorProfile();
   const logsRows = GatesEntryHelpers.buildLogsRowsPayload(entries, { actor });
   const monthlyPayloads = GatesEntryHelpers.buildMonthlySheetPayloads(entries);
 
   await ensureLogsHeader(spreadsheetId);
-  await appendToSheet(spreadsheetId, "logs!A:K", logsRows);
+  await appendToSheet(spreadsheetId, "logs!A:J", logsRows);
 
   for (const payload of monthlyPayloads) {
     await appendToSheet(spreadsheetId, `${payload.sheetName}!A:H`, payload.rows);
@@ -313,7 +296,7 @@ form.addEventListener("submit", async (event) => {
   try {
     const saveResult = await appendEntries(selection.spreadsheetId, collectEntryDrafts());
     resetRows();
-    const actorLabel = saveResult.actor.email || saveResult.actor.name;
+    const actorLabel = saveResult.actor.name;
     const actorSuffix = actorLabel ? ` 입력자: ${actorLabel}.` : "";
     setResult(
       "success",
