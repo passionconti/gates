@@ -52,6 +52,17 @@
 
             <div class="entry-table-wrap">
               <table class="entry-table">
+                <colgroup>
+                  <col class="entry-col-date" />
+                  <col class="entry-col-type" />
+                  <col class="entry-col-category" />
+                  <col class="entry-col-description" />
+                  <col class="entry-col-owner" />
+                  <col class="entry-col-payment" />
+                  <col class="entry-col-amount" />
+                  <col class="entry-col-note" />
+                  <col class="entry-col-delete" />
+                </colgroup>
                 <thead>
                   <tr>
                     <th scope="col">날짜</th>
@@ -62,7 +73,7 @@
                     <th scope="col">지출방식</th>
                     <th scope="col">금액</th>
                     <th scope="col">비고</th>
-                    <th scope="col">삭제</th>
+                    <th scope="col" aria-hidden="true"></th>
                   </tr>
                 </thead>
                 <tbody id="entry-rows"></tbody>

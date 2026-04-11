@@ -188,6 +188,22 @@ button.secondary {
   border-radius: 12px;
 }
 
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.icon-button span {
+  pointer-events: none;
+}
+
 .banner,
 .result {
   margin-bottom: 18px;
@@ -218,6 +234,42 @@ button.secondary {
 
 .sheet-link:hover {
   text-decoration: underline;
+}
+
+.entry-col-date {
+  width: 170px;
+}
+
+.entry-col-type {
+  width: 110px;
+}
+
+.entry-col-category {
+  width: 150px;
+}
+
+.entry-col-description {
+  width: 220px;
+}
+
+.entry-col-owner {
+  width: 150px;
+}
+
+.entry-col-payment {
+  width: 150px;
+}
+
+.entry-col-amount {
+  width: 120px;
+}
+
+.entry-col-note {
+  width: 160px;
+}
+
+.entry-col-delete {
+  width: 72px;
 }
 
 .entry-table-wrap {
@@ -270,14 +322,34 @@ button.secondary {
 .entry-table select {
   min-width: 0;
   min-height: 46px;
+  width: 100%;
+}
+
+.entry-table select,
+.entry-table input {
+  text-overflow: ellipsis;
+}
+
+.entry-table input[type="number"] {
+  text-align: right;
+}
+
+.entry-table input[type="date"] {
+  font-variant-numeric: tabular-nums;
 }
 
 .entry-table .action-cell {
   grid-column: 1 / -1;
+  text-align: center;
+}
+
+.entry-table .action-cell::before {
+  content: none;
 }
 
 .entry-table .remove-row-button {
   width: 100%;
+  margin-inline: auto;
 }
 
 @media (min-width: 721px) {
@@ -289,7 +361,7 @@ button.secondary {
   }
 
   .entry-table {
-    min-width: 1180px;
+    min-width: 1302px;
     table-layout: fixed;
   }
 
@@ -345,12 +417,12 @@ button.secondary {
 
   .entry-table .action-cell {
     grid-column: auto;
-    width: 92px;
+    width: 72px;
   }
 
   .entry-table .remove-row-button {
-    width: auto;
-    min-width: 72px;
+    width: 44px;
+    min-width: 44px;
   }
 }
 

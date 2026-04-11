@@ -44,7 +44,7 @@ function getGoogleApiHeaders() {
   const authSession = GatesShared.readAuthSession(window.sessionStorage);
 
   if (!authSession?.accessToken) {
-    throw new Error("인증 정보가 만료되었습니다. 다시 대상 시트를 선택해 주세요.");
+    throw new Error("인증 정보가 만료되었습니다. 다시 대상 시트를 골라 주세요.");
   }
 
   return {
@@ -163,12 +163,11 @@ function populateSelection(selection) {
   changeTargetLink.href = "/";
 }
 
-function buildSelectOptions(options, selectedValue, emptyLabel = "선택해 주세요") {
-  return ["", ...options]
+function buildSelectOptions(options, selectedValue) {
+  return options
     .map((option) => {
       const selected = option === selectedValue ? " selected" : "";
-      const label = option || emptyLabel;
-      return `<option value="${option}"${selected}>${label}</option>`;
+      return `<option value="${option}"${selected}>${option}</option>`;
     })
     .join("");
 }
@@ -177,9 +176,9 @@ function syncCategoryOptions(row) {
   const typeSelect = row.querySelector('[name="type"]');
   const categorySelect = row.querySelector('[name="category"]');
   const options = GatesEntryHelpers.getCategoryOptionsForType(typeSelect.value);
-  const nextValue = options.includes(categorySelect.value) ? categorySelect.value : "";
+  const nextValue = options.includes(categorySelect.value) ? categorySelect.value : options[0];
 
-  categorySelect.innerHTML = buildSelectOptions(options, nextValue, "카테고리 선택");
+  categorySelect.innerHTML = buildSelectOptions(options, nextValue);
 }
 
 function createRowElement(draft, rowId) {
@@ -192,12 +191,12 @@ function createRowElement(draft, rowId) {
     </td>
     <td data-label="구분">
       <select name="type" required>
-        ${buildSelectOptions(GatesEntryHelpers.ENTRY_TYPE_OPTIONS, draft.type, "구분 선택")}
+        ${buildSelectOptions(GatesEntryHelpers.ENTRY_TYPE_OPTIONS, draft.type)}
       </select>
     </td>
     <td data-label="카테고리">
       <select name="category" required>
-        ${buildSelectOptions(GatesEntryHelpers.getCategoryOptionsForType(draft.type), draft.category, "카테고리 선택")}
+        ${buildSelectOptions(GatesEntryHelpers.getCategoryOptionsForType(draft.type), draft.category)}
       </select>
     </td>
     <td data-label="내용">
@@ -205,12 +204,12 @@ function createRowElement(draft, rowId) {
     </td>
     <td data-label="명의">
       <select name="owner">
-        ${buildSelectOptions(GatesEntryHelpers.OWNER_OPTIONS, draft.owner, "명의 선택")}
+        ${buildSelectOptions(GatesEntryHelpers.OWNER_OPTIONS, draft.owner)}
       </select>
     </td>
     <td data-label="지출방식">
       <select name="paymentMethod">
-        ${buildSelectOptions(GatesEntryHelpers.PAYMENT_METHOD_OPTIONS, draft.paymentMethod, "지출방식 선택")}
+        ${buildSelectOptions(GatesEntryHelpers.PAYMENT_METHOD_OPTIONS, draft.paymentMethod)}
       </select>
     </td>
     <td data-label="금액">
@@ -220,7 +219,9 @@ function createRowElement(draft, rowId) {
       <input type="text" name="note" value="${draft.note}" placeholder="메모" />
     </td>
     <td data-label="삭제" class="action-cell">
-      <button type="button" class="secondary remove-row-button">삭제</button>
+      <button type="button" class="secondary remove-row-button icon-button" aria-label="항목 삭제">
+        <span aria-hidden="true">🗑️</span>
+      </button>
     </td>
   `;
   return row;
@@ -235,6 +236,7 @@ function updateRowButtons() {
     if (removeButton) {
       removeButton.disabled = rows.length === 1;
       removeButton.setAttribute("aria-label", `${index + 1}번째 항목 삭제`);
+      removeButton.title = `${index + 1}번째 항목 삭제`;
     }
   });
 }
