@@ -5,10 +5,12 @@ const {
   buildLogsRowsPayload,
   buildMonthlySheetPayloads,
   createEmptyEntryDraft,
+  formatDesktopDateValue,
   formatMonthlySheetName,
   getCategoryOptionsForType,
   getLogsHeaderRow,
   isLogsHeaderRowComplete,
+  normalizeDesktopDateValue,
   OWNER_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
 } = require('../public/entry-helpers.js');
@@ -29,6 +31,17 @@ test('createEmptyEntryDraft returns the requested default values for a new row',
 test('formatMonthlySheetName converts the date to the M월 format', () => {
   assert.equal(formatMonthlySheetName('2026-04-10'), '4월');
   assert.equal(formatMonthlySheetName('2026-11-01'), '11월');
+});
+
+test('formatDesktopDateValue formats YYYY-MM-DD dates as yy.mm.dd for desktop inputs', () => {
+  assert.equal(formatDesktopDateValue('2026-04-11'), '26.04.11');
+  assert.equal(formatDesktopDateValue('2026-11-03'), '26.11.03');
+});
+
+test('normalizeDesktopDateValue converts yy.mm.dd desktop input back to YYYY-MM-DD', () => {
+  assert.equal(normalizeDesktopDateValue('26.04.11'), '2026-04-11');
+  assert.equal(normalizeDesktopDateValue('2026.04.11'), '2026-04-11');
+  assert.equal(normalizeDesktopDateValue('26-04-11'), '2026-04-11');
 });
 
 test('getCategoryOptionsForType returns the allowed dropdown options for each type', () => {

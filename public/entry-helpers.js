@@ -121,6 +121,37 @@
     return `${match[1].slice(-2)}-${match[2]}-${match[3]}`;
   }
 
+  function formatDesktopDateValue(dateText) {
+    const normalized = toTrimmedString(dateText);
+    const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (!match) {
+      return normalized;
+    }
+
+    return `${match[1].slice(-2)}.${match[2]}.${match[3]}`;
+  }
+
+  function normalizeDesktopDateValue(dateText) {
+    const normalized = toTrimmedString(dateText).replaceAll(' ', '');
+
+    if (!normalized) {
+      return '';
+    }
+
+    const longYearMatch = normalized.match(/^(\d{4})[.-]?(\d{2})[.-]?(\d{2})$/);
+    if (longYearMatch) {
+      return `${longYearMatch[1]}-${longYearMatch[2]}-${longYearMatch[3]}`;
+    }
+
+    const shortYearMatch = normalized.match(/^(\d{2})[.-]?(\d{2})[.-]?(\d{2})$/);
+    if (shortYearMatch) {
+      return `20${shortYearMatch[1]}-${shortYearMatch[2]}-${shortYearMatch[3]}`;
+    }
+
+    return '';
+  }
+
   function getCategoryOptionsForType(type) {
     return type === '수입' ? [...INCOME_CATEGORY_OPTIONS] : [...EXPENSE_CATEGORY_OPTIONS];
   }
@@ -277,6 +308,8 @@
     getLogsHeaderRow,
     isLogsHeaderRowComplete,
     formatMonthlySheetName,
+    formatDesktopDateValue,
+    normalizeDesktopDateValue,
     getCategoryOptionsForType,
     buildLogsRowsPayload,
     buildMonthlySheetPayloads,

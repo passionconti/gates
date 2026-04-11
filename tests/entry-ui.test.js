@@ -27,3 +27,11 @@ test('desktop table hides the delete header text while keeping explicit column w
   assert.match(stylesCss, /\.entry-col-owner\s*\{[\s\S]*width:\s*150px;/);
   assert.match(stylesCss, /\.entry-col-delete\s*\{[\s\S]*width:\s*72px;/);
 });
+
+test('desktop date input uses a custom text-style short-year format instead of native date UI', () => {
+  assert.match(entryJs, /name="dateDisplay"/);
+  assert.match(entryJs, /placeholder="26\.04\.11"/);
+  assert.match(entryJs, /formatDesktopDateValue/);
+  assert.match(entryJs, /normalizeDesktopDateValue/);
+  assert.doesNotMatch(entryJs, /<input type="date" name="date"/);
+});

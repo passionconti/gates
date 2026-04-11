@@ -187,7 +187,16 @@ function createRowElement(draft, rowId) {
   row.dataset.rowId = String(rowId);
   row.innerHTML = `
     <td data-label="날짜">
-      <input type="date" name="date" value="${draft.date}" required />
+      <input type="hidden" name="date" value="${draft.date}" />
+      <input
+        type="text"
+        name="dateDisplay"
+        value="${GatesEntryHelpers.formatDesktopDateValue(draft.date)}"
+        placeholder="26.04.11"
+        inputmode="numeric"
+        autocomplete="off"
+        required
+      />
     </td>
     <td data-label="구분">
       <select name="type" required>
@@ -251,6 +260,7 @@ function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDat
   );
   entryRows.append(row);
   syncCategoryOptions(row);
+  syncDateField(row, { formatDisplay: true });
   updateRowButtons();
   return row;
 }
@@ -265,17 +275,33 @@ function removeEntryRow(button) {
   updateRowButtons();
 }
 
+function syncDateField(row, { formatDisplay = false } = {}) {
+  const dateValueInput = row.querySelector('[name="date"]');
+  const dateDisplayInput = row.querySelector('[name="dateDisplay"]');
+  const normalizedDate = GatesEntryHelpers.normalizeDesktopDateValue(dateDisplayInput.value);
+
+  dateValueInput.value = normalizedDate;
+
+  if (formatDisplay && normalizedDate) {
+    dateDisplayInput.value = GatesEntryHelpers.formatDesktopDateValue(normalizedDate);
+  }
+}
+
 function collectEntryDrafts() {
-  return Array.from(entryRows.querySelectorAll(".entry-row")).map((row) => ({
-    date: row.querySelector('[name="date"]').value,
-    type: row.querySelector('[name="type"]').value,
-    category: row.querySelector('[name="category"]').value,
-    description: row.querySelector('[name="description"]').value,
-    owner: row.querySelector('[name="owner"]').value,
-    paymentMethod: row.querySelector('[name="paymentMethod"]').value,
-    amount: row.querySelector('[name="amount"]').value,
-    note: row.querySelector('[name="note"]').value,
-  }));
+  return Array.from(entryRows.querySelectorAll(".entry-row")).map((row) => {
+    syncDateField(row);
+
+    return {
+      date: row.querySelector('[name="date"]').value,
+      type: row.querySelector('[name="type"]').value,
+      category: row.querySelector('[name="category"]').value,
+      description: row.querySelector('[name="description"]').value,
+      owner: row.querySelector('[name="owner"]').value,
+      paymentMethod: row.querySelector('[name="paymentMethod"]').value,
+      amount: row.querySelector('[name="amount"]').value,
+      note: row.querySelector('[name="note"]').value,
+    };
+  });
 }
 
 function resetRows() {
@@ -298,10 +324,22 @@ entryRows.addEventListener("click", (event) => {
 });
 
 entryRows.addEventListener("change", (event) => {
+  const row = event.target.closest(".entry-row");
+
   if (event.target.matches('[name="type"]')) {
-    syncCategoryOptions(event.target.closest(".entry-row"));
+    syncCategoryOptions(row);
+  }
+
+  if (event.target.matches('[name="dateDisplay"]')) {
+    syncDateField(row, { formatDisplay: true });
   }
 });
+
+entryRows.addEventListener("blur", (event) => {
+  if (event.target.matches('[name="dateDisplay"]')) {
+    syncDateField(event.target.closest('.entry-row'), { formatDisplay: true });
+  }
+}, true);
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();

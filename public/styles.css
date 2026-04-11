@@ -334,8 +334,9 @@ button.secondary {
   text-align: right;
 }
 
-.entry-table input[type="date"] {
+.entry-table input[name="dateDisplay"] {
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 .entry-table .action-cell {
@@ -403,8 +404,8 @@ button.secondary {
     vertical-align: middle;
   }
 
-  .entry-table input[type="date"] {
-    min-width: 150px;
+  .entry-table input[name="dateDisplay"] {
+    min-width: 132px;
   }
 
   .entry-table tbody td::before {
