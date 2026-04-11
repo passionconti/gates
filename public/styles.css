@@ -188,6 +188,22 @@ button.secondary {
   border-radius: 12px;
 }
 
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.icon-button span {
+  pointer-events: none;
+}
+
 .banner,
 .result {
   margin-bottom: 18px;
@@ -218,6 +234,42 @@ button.secondary {
 
 .sheet-link:hover {
   text-decoration: underline;
+}
+
+.entry-col-date {
+  width: 140px;
+}
+
+.entry-col-type {
+  width: 92px;
+}
+
+.entry-col-category {
+  width: 126px;
+}
+
+.entry-col-description {
+  width: 180px;
+}
+
+.entry-col-owner {
+  width: 118px;
+}
+
+.entry-col-payment {
+  width: 126px;
+}
+
+.entry-col-amount {
+  width: 96px;
+}
+
+.entry-col-note {
+  width: 126px;
+}
+
+.entry-col-delete {
+  width: 56px;
 }
 
 .entry-table-wrap {
@@ -270,14 +322,109 @@ button.secondary {
 .entry-table select {
   min-width: 0;
   min-height: 46px;
+  width: 100%;
+}
+
+.entry-table select,
+.entry-table input {
+  text-overflow: ellipsis;
+}
+
+.entry-table input[type="number"] {
+  text-align: right;
+}
+
+.entry-table input[name="dateDisplay"] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 .entry-table .action-cell {
   grid-column: 1 / -1;
+  text-align: center;
+}
+
+.entry-table .action-cell::before {
+  content: none;
 }
 
 .entry-table .remove-row-button {
   width: 100%;
+  margin-inline: auto;
+}
+
+@media (min-width: 721px) {
+  .entry-table-wrap {
+    overflow-x: hidden;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.45);
+  }
+
+  .entry-table {
+    min-width: 1040px;
+    table-layout: fixed;
+  }
+
+  .entry-table thead {
+    display: table-header-group;
+  }
+
+  .entry-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(245, 239, 228, 0.96);
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .entry-table tbody {
+    display: table-row-group;
+  }
+
+  .entry-table .entry-row {
+    display: table-row;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .entry-table tbody td {
+    display: table-cell;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+  }
+
+  .entry-table input[name="dateDisplay"] {
+    min-width: 120px;
+  }
+
+  .entry-table tbody td::before {
+    content: none;
+  }
+
+  .entry-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .entry-table .action-cell {
+    grid-column: auto;
+    width: 72px;
+  }
+
+  .entry-table .remove-row-button {
+    width: 44px;
+    min-width: 44px;
+  }
 }
 
 .hidden {

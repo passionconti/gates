@@ -8,6 +8,28 @@
   global.GatesEntryHelpers = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const ENTRY_TYPE_OPTIONS = ['수입', '지출'];
+  const EXPENSE_CATEGORY_OPTIONS = [
+    '헌금',
+    '생활비',
+    '경조사비',
+    '부모님 용돈',
+    '선물',
+    '외식',
+    '배달',
+    '운동',
+    '쇼핑',
+    '병원비',
+    '대출금',
+    '시운',
+    '승렬',
+    '신영',
+    '여행',
+    '여가',
+    '세금',
+  ];
+  const INCOME_CATEGORY_OPTIONS = ['월급', '용돈', '시운', '기타'];
+  const OWNER_OPTIONS = ['승렬', '신영', '생활비계좌'];
+  const PAYMENT_METHOD_OPTIONS = ['카카오페이', '네이버페이', '쿠팡카드', '카드', '계좌이체', '현금'];
   const LOGS_HEADER_ROW = [
     'date',
     'type',
@@ -36,10 +58,10 @@
     return {
       date: toTrimmedString(defaultDate),
       type: '지출',
-      category: '',
+      category: '생활비',
       description: '',
-      owner: '',
-      paymentMethod: '',
+      owner: '생활비계좌',
+      paymentMethod: '카드',
       amount: '',
       note: '',
     };
@@ -65,12 +87,13 @@
 
   function isEntryDraftEmpty(entry) {
     const draft = sanitizeEntryDraft(entry);
+    const defaultDraft = createEmptyEntryDraft(draft.date);
 
     return [
-      draft.category,
+      draft.category === defaultDraft.category ? '' : draft.category,
       draft.description,
-      draft.owner,
-      draft.paymentMethod,
+      draft.owner === defaultDraft.owner ? '' : draft.owner,
+      draft.paymentMethod === defaultDraft.paymentMethod ? '' : draft.paymentMethod,
       draft.amount,
       draft.note,
     ].every((value) => value === '');
@@ -98,6 +121,45 @@
     return `${match[1].slice(-2)}-${match[2]}-${match[3]}`;
   }
 
+  function formatDesktopDateValue(dateText) {
+    const normalized = toTrimmedString(dateText);
+    const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (!match) {
+      return normalized;
+    }
+
+    return `${match[1].slice(-2)}.${match[2]}.${match[3]}`;
+  }
+
+  function normalizeDesktopDateValue(dateText) {
+    const normalized = toTrimmedString(dateText).replaceAll(' ', '');
+
+    if (!normalized) {
+      return '';
+    }
+
+    const longYearMatch = normalized.match(/^(\d{4})[.-]?(\d{2})[.-]?(\d{2})$/);
+    if (longYearMatch) {
+      return `${longYearMatch[1]}-${longYearMatch[2]}-${longYearMatch[3]}`;
+    }
+
+    const shortYearMatch = normalized.match(/^(\d{2})[.-]?(\d{2})[.-]?(\d{2})$/);
+    if (shortYearMatch) {
+      return `20${shortYearMatch[1]}-${shortYearMatch[2]}-${shortYearMatch[3]}`;
+    }
+
+    return '';
+  }
+
+  function getCategoryOptionsForType(type) {
+    return type === '수입' ? [...INCOME_CATEGORY_OPTIONS] : [...EXPENSE_CATEGORY_OPTIONS];
+  }
+
+  function ensureAllowedValue(value, options) {
+    return options.includes(toTrimmedString(value));
+  }
+
   function validateRequiredFields(entry, rowNumber) {
     for (const [field, label] of REQUIRED_FIELDS) {
       if (!toTrimmedString(entry[field])) {
@@ -107,6 +169,18 @@
 
     if (!ENTRY_TYPE_OPTIONS.includes(entry.type)) {
       throw new Error(`${rowNumber}번째 항목의 수입/지출 구분을 다시 선택해 주세요.`);
+    }
+
+    if (!ensureAllowedValue(entry.category, getCategoryOptionsForType(entry.type))) {
+      throw new Error(`${rowNumber}번째 항목의 카테고리를 다시 선택해 주세요.`);
+    }
+
+    if (entry.owner && !ensureAllowedValue(entry.owner, OWNER_OPTIONS)) {
+      throw new Error(`${rowNumber}번째 항목의 명의를 다시 선택해 주세요.`);
+    }
+
+    if (entry.paymentMethod && !ensureAllowedValue(entry.paymentMethod, PAYMENT_METHOD_OPTIONS)) {
+      throw new Error(`${rowNumber}번째 항목의 지출방식을 다시 선택해 주세요.`);
     }
   }
 
@@ -138,7 +212,9 @@
   function isLogsHeaderRowComplete(row) {
     const headerRow = Array.isArray(row) ? row : [];
 
-    return LOGS_HEADER_ROW.every((cell, index) => normalizeHeaderCell(headerRow[index]) === normalizeHeaderCell(cell));
+    return LOGS_HEADER_ROW.every(
+      (cell, index) => normalizeHeaderCell(headerRow[index]) === normalizeHeaderCell(cell),
+    );
   }
 
   function buildLogsRow(entry, rowNumber, timestamp, actor) {
@@ -222,12 +298,19 @@
 
   return {
     ENTRY_TYPE_OPTIONS,
+    EXPENSE_CATEGORY_OPTIONS,
+    INCOME_CATEGORY_OPTIONS,
+    OWNER_OPTIONS,
+    PAYMENT_METHOD_OPTIONS,
     createEmptyEntryDraft,
     sanitizeEntryDraft,
     isEntryDraftEmpty,
     getLogsHeaderRow,
     isLogsHeaderRowComplete,
     formatMonthlySheetName,
+    formatDesktopDateValue,
+    normalizeDesktopDateValue,
+    getCategoryOptionsForType,
     buildLogsRowsPayload,
     buildMonthlySheetPayloads,
   };

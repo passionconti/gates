@@ -7,8 +7,6 @@ const targetName = document.querySelector("#target-name");
 const spreadsheetLink = document.querySelector("#spreadsheet-link");
 const changeTargetLink = document.querySelector("#change-target-link");
 
-const PAYMENT_METHOD_OPTIONS = ["", "현금", "카드", "계좌이체", "기타"];
-
 const state = {
   nextRowId: 1,
 };
@@ -46,7 +44,7 @@ function getGoogleApiHeaders() {
   const authSession = GatesShared.readAuthSession(window.sessionStorage);
 
   if (!authSession?.accessToken) {
-    throw new Error("인증 정보가 만료되었습니다. 다시 대상 시트를 선택해 주세요.");
+    throw new Error("인증 정보가 만료되었습니다. 다시 대상 시트를 골라 주세요.");
   }
 
   return {
@@ -169,10 +167,18 @@ function buildSelectOptions(options, selectedValue) {
   return options
     .map((option) => {
       const selected = option === selectedValue ? " selected" : "";
-      const label = option || "선택 안 함";
-      return `<option value="${option}"${selected}>${label}</option>`;
+      return `<option value="${option}"${selected}>${option}</option>`;
     })
     .join("");
+}
+
+function syncCategoryOptions(row) {
+  const typeSelect = row.querySelector('[name="type"]');
+  const categorySelect = row.querySelector('[name="category"]');
+  const options = GatesEntryHelpers.getCategoryOptionsForType(typeSelect.value);
+  const nextValue = options.includes(categorySelect.value) ? categorySelect.value : options[0];
+
+  categorySelect.innerHTML = buildSelectOptions(options, nextValue);
 }
 
 function createRowElement(draft, rowId) {
@@ -181,7 +187,16 @@ function createRowElement(draft, rowId) {
   row.dataset.rowId = String(rowId);
   row.innerHTML = `
     <td data-label="날짜">
-      <input type="date" name="date" value="${draft.date}" required />
+      <input type="hidden" name="date" value="${draft.date}" />
+      <input
+        type="text"
+        name="dateDisplay"
+        value="${GatesEntryHelpers.formatDesktopDateValue(draft.date)}"
+        placeholder="26.04.11"
+        inputmode="numeric"
+        autocomplete="off"
+        required
+      />
     </td>
     <td data-label="구분">
       <select name="type" required>
@@ -189,17 +204,21 @@ function createRowElement(draft, rowId) {
       </select>
     </td>
     <td data-label="카테고리">
-      <input type="text" name="category" value="${draft.category}" placeholder="식비" required />
+      <select name="category" required>
+        ${buildSelectOptions(GatesEntryHelpers.getCategoryOptionsForType(draft.type), draft.category)}
+      </select>
     </td>
     <td data-label="내용">
       <input type="text" name="description" value="${draft.description}" placeholder="점심 회의" required />
     </td>
     <td data-label="명의">
-      <input type="text" name="owner" value="${draft.owner}" placeholder="본인" />
+      <select name="owner">
+        ${buildSelectOptions(GatesEntryHelpers.OWNER_OPTIONS, draft.owner)}
+      </select>
     </td>
     <td data-label="지출방식">
       <select name="paymentMethod">
-        ${buildSelectOptions(PAYMENT_METHOD_OPTIONS, draft.paymentMethod)}
+        ${buildSelectOptions(GatesEntryHelpers.PAYMENT_METHOD_OPTIONS, draft.paymentMethod)}
       </select>
     </td>
     <td data-label="금액">
@@ -209,7 +228,9 @@ function createRowElement(draft, rowId) {
       <input type="text" name="note" value="${draft.note}" placeholder="메모" />
     </td>
     <td data-label="삭제" class="action-cell">
-      <button type="button" class="secondary remove-row-button">삭제</button>
+      <button type="button" class="secondary remove-row-button icon-button" aria-label="항목 삭제">
+        <span aria-hidden="true">🗑️</span>
+      </button>
     </td>
   `;
   return row;
@@ -224,6 +245,7 @@ function updateRowButtons() {
     if (removeButton) {
       removeButton.disabled = rows.length === 1;
       removeButton.setAttribute("aria-label", `${index + 1}번째 항목 삭제`);
+      removeButton.title = `${index + 1}번째 항목 삭제`;
     }
   });
 }
@@ -237,6 +259,8 @@ function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDat
     state.nextRowId++,
   );
   entryRows.append(row);
+  syncCategoryOptions(row);
+  syncDateField(row, { formatDisplay: true });
   updateRowButtons();
   return row;
 }
@@ -251,17 +275,33 @@ function removeEntryRow(button) {
   updateRowButtons();
 }
 
+function syncDateField(row, { formatDisplay = false } = {}) {
+  const dateValueInput = row.querySelector('[name="date"]');
+  const dateDisplayInput = row.querySelector('[name="dateDisplay"]');
+  const normalizedDate = GatesEntryHelpers.normalizeDesktopDateValue(dateDisplayInput.value);
+
+  dateValueInput.value = normalizedDate;
+
+  if (formatDisplay && normalizedDate) {
+    dateDisplayInput.value = GatesEntryHelpers.formatDesktopDateValue(normalizedDate);
+  }
+}
+
 function collectEntryDrafts() {
-  return Array.from(entryRows.querySelectorAll(".entry-row")).map((row) => ({
-    date: row.querySelector('[name="date"]').value,
-    type: row.querySelector('[name="type"]').value,
-    category: row.querySelector('[name="category"]').value,
-    description: row.querySelector('[name="description"]').value,
-    owner: row.querySelector('[name="owner"]').value,
-    paymentMethod: row.querySelector('[name="paymentMethod"]').value,
-    amount: row.querySelector('[name="amount"]').value,
-    note: row.querySelector('[name="note"]').value,
-  }));
+  return Array.from(entryRows.querySelectorAll(".entry-row")).map((row) => {
+    syncDateField(row);
+
+    return {
+      date: row.querySelector('[name="date"]').value,
+      type: row.querySelector('[name="type"]').value,
+      category: row.querySelector('[name="category"]').value,
+      description: row.querySelector('[name="description"]').value,
+      owner: row.querySelector('[name="owner"]').value,
+      paymentMethod: row.querySelector('[name="paymentMethod"]').value,
+      amount: row.querySelector('[name="amount"]').value,
+      note: row.querySelector('[name="note"]').value,
+    };
+  });
 }
 
 function resetRows() {
@@ -282,6 +322,24 @@ entryRows.addEventListener("click", (event) => {
 
   removeEntryRow(button);
 });
+
+entryRows.addEventListener("change", (event) => {
+  const row = event.target.closest(".entry-row");
+
+  if (event.target.matches('[name="type"]')) {
+    syncCategoryOptions(row);
+  }
+
+  if (event.target.matches('[name="dateDisplay"]')) {
+    syncDateField(row, { formatDisplay: true });
+  }
+});
+
+entryRows.addEventListener("blur", (event) => {
+  if (event.target.matches('[name="dateDisplay"]')) {
+    syncDateField(event.target.closest('.entry-row'), { formatDisplay: true });
+  }
+}, true);
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
