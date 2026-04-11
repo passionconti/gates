@@ -7,8 +7,6 @@ const targetName = document.querySelector("#target-name");
 const spreadsheetLink = document.querySelector("#spreadsheet-link");
 const changeTargetLink = document.querySelector("#change-target-link");
 
-const PAYMENT_METHOD_OPTIONS = ["", "현금", "카드", "계좌이체", "기타"];
-
 const state = {
   nextRowId: 1,
 };
@@ -165,14 +163,23 @@ function populateSelection(selection) {
   changeTargetLink.href = "/";
 }
 
-function buildSelectOptions(options, selectedValue) {
-  return options
+function buildSelectOptions(options, selectedValue, emptyLabel = "선택해 주세요") {
+  return ["", ...options]
     .map((option) => {
       const selected = option === selectedValue ? " selected" : "";
-      const label = option || "선택 안 함";
+      const label = option || emptyLabel;
       return `<option value="${option}"${selected}>${label}</option>`;
     })
     .join("");
+}
+
+function syncCategoryOptions(row) {
+  const typeSelect = row.querySelector('[name="type"]');
+  const categorySelect = row.querySelector('[name="category"]');
+  const options = GatesEntryHelpers.getCategoryOptionsForType(typeSelect.value);
+  const nextValue = options.includes(categorySelect.value) ? categorySelect.value : "";
+
+  categorySelect.innerHTML = buildSelectOptions(options, nextValue, "카테고리 선택");
 }
 
 function createRowElement(draft, rowId) {
@@ -185,21 +192,25 @@ function createRowElement(draft, rowId) {
     </td>
     <td data-label="구분">
       <select name="type" required>
-        ${buildSelectOptions(GatesEntryHelpers.ENTRY_TYPE_OPTIONS, draft.type)}
+        ${buildSelectOptions(GatesEntryHelpers.ENTRY_TYPE_OPTIONS, draft.type, "구분 선택")}
       </select>
     </td>
     <td data-label="카테고리">
-      <input type="text" name="category" value="${draft.category}" placeholder="식비" required />
+      <select name="category" required>
+        ${buildSelectOptions(GatesEntryHelpers.getCategoryOptionsForType(draft.type), draft.category, "카테고리 선택")}
+      </select>
     </td>
     <td data-label="내용">
       <input type="text" name="description" value="${draft.description}" placeholder="점심 회의" required />
     </td>
     <td data-label="명의">
-      <input type="text" name="owner" value="${draft.owner}" placeholder="본인" />
+      <select name="owner">
+        ${buildSelectOptions(GatesEntryHelpers.OWNER_OPTIONS, draft.owner, "명의 선택")}
+      </select>
     </td>
     <td data-label="지출방식">
       <select name="paymentMethod">
-        ${buildSelectOptions(PAYMENT_METHOD_OPTIONS, draft.paymentMethod)}
+        ${buildSelectOptions(GatesEntryHelpers.PAYMENT_METHOD_OPTIONS, draft.paymentMethod, "지출방식 선택")}
       </select>
     </td>
     <td data-label="금액">
@@ -237,6 +248,7 @@ function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDat
     state.nextRowId++,
   );
   entryRows.append(row);
+  syncCategoryOptions(row);
   updateRowButtons();
   return row;
 }
@@ -281,6 +293,12 @@ entryRows.addEventListener("click", (event) => {
   }
 
   removeEntryRow(button);
+});
+
+entryRows.addEventListener("change", (event) => {
+  if (event.target.matches('[name="type"]')) {
+    syncCategoryOptions(event.target.closest(".entry-row"));
+  }
 });
 
 form.addEventListener("submit", async (event) => {

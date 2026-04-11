@@ -6,8 +6,11 @@ const {
   buildMonthlySheetPayloads,
   createEmptyEntryDraft,
   formatMonthlySheetName,
+  getCategoryOptionsForType,
   getLogsHeaderRow,
   isLogsHeaderRowComplete,
+  OWNER_OPTIONS,
+  PAYMENT_METHOD_OPTIONS,
 } = require('../public/entry-helpers.js');
 
 test('createEmptyEntryDraft returns default values for a new row', () => {
@@ -26,6 +29,34 @@ test('createEmptyEntryDraft returns default values for a new row', () => {
 test('formatMonthlySheetName converts the date to the M월 format', () => {
   assert.equal(formatMonthlySheetName('2026-04-10'), '4월');
   assert.equal(formatMonthlySheetName('2026-11-01'), '11월');
+});
+
+test('getCategoryOptionsForType returns the allowed dropdown options for each type', () => {
+  assert.deepEqual(getCategoryOptionsForType('지출'), [
+    '헌금',
+    '생활비',
+    '경조사비',
+    '부모님 용돈',
+    '선물',
+    '외식',
+    '배달',
+    '운동',
+    '쇼핑',
+    '병원비',
+    '대출금',
+    '시운',
+    '승렬',
+    '신영',
+    '여행',
+    '여가',
+    '세금',
+  ]);
+  assert.deepEqual(getCategoryOptionsForType('수입'), ['월급', '용돈', '시운', '기타']);
+});
+
+test('exported dropdown option constants match the supported owner and payment methods', () => {
+  assert.deepEqual(OWNER_OPTIONS, ['승렬', '신영', '생활비계좌']);
+  assert.deepEqual(PAYMENT_METHOD_OPTIONS, ['카카오페이', '네이버페이', '쿠팡카드', '카드', '계좌이체', '현금']);
 });
 
 test('getLogsHeaderRow returns the actorname column expected by the logs sheet', () => {
@@ -60,9 +91,9 @@ test('buildLogsRowsPayload normalizes stored dates to yy-mm-dd', () => {
       {
         date: '2026-04-10',
         type: '지출',
-        category: '식비',
+        category: '외식',
         description: '점심',
-        owner: '라이언',
+        owner: '승렬',
         paymentMethod: '카드',
         amount: '12000',
         note: '',
@@ -84,9 +115,9 @@ test('buildLogsRowsPayload builds raw rows for the logs sheet with actor informa
       {
         date: '2026-04-10',
         type: '지출',
-        category: '식비',
+        category: '외식',
         description: '점심',
-        owner: '라이언',
+        owner: '승렬',
         paymentMethod: '카드',
         amount: '12,000',
         note: '팀 점심',
@@ -94,9 +125,9 @@ test('buildLogsRowsPayload builds raw rows for the logs sheet with actor informa
       {
         date: '2026-04-10',
         type: '수입',
-        category: '급여',
+        category: '월급',
         description: '월급',
-        owner: '법인',
+        owner: '생활비계좌',
         paymentMethod: '계좌이체',
         amount: '3000000',
         note: '',
@@ -106,8 +137,8 @@ test('buildLogsRowsPayload builds raw rows for the logs sheet with actor informa
   );
 
   assert.deepEqual(rows, [
-    ['26-04-10', '지출', '식비', '점심', '라이언', '카드', 12000, '팀 점심', now, 'Ryan'],
-    ['26-04-10', '수입', '급여', '월급', '법인', '계좌이체', 3000000, '', now, 'Ryan'],
+    ['26-04-10', '지출', '외식', '점심', '승렬', '카드', 12000, '팀 점심', now, 'Ryan'],
+    ['26-04-10', '수입', '월급', '월급', '생활비계좌', '계좌이체', 3000000, '', now, 'Ryan'],
   ]);
 });
 
@@ -116,9 +147,9 @@ test('buildMonthlySheetPayloads groups rows by month and maps expense and income
     {
       date: '2026-04-10',
       type: '지출',
-      category: '식비',
+      category: '외식',
       description: '점심',
-      owner: '라이언',
+      owner: '승렬',
       paymentMethod: '카드',
       amount: '12,000',
       note: '팀 점심',
@@ -126,9 +157,9 @@ test('buildMonthlySheetPayloads groups rows by month and maps expense and income
     {
       date: '2026-04-20',
       type: '수입',
-      category: '급여',
+      category: '월급',
       description: '월급',
-      owner: '법인',
+      owner: '생활비계좌',
       paymentMethod: '계좌이체',
       amount: '3000000',
       note: '',
@@ -136,7 +167,7 @@ test('buildMonthlySheetPayloads groups rows by month and maps expense and income
     {
       date: '2026-05-03',
       type: '지출',
-      category: '교통',
+      category: '여행',
       description: '택시',
       owner: '',
       paymentMethod: '카드',
@@ -149,13 +180,13 @@ test('buildMonthlySheetPayloads groups rows by month and maps expense and income
     {
       sheetName: '4월',
       rows: [
-        ['26-04-10', '식비', '점심', 12000, '', '라이언', '카드', '팀 점심'],
-        ['26-04-20', '급여', '월급', '', 3000000, '법인', '계좌이체', ''],
+        ['26-04-10', '외식', '점심', 12000, '', '승렬', '카드', '팀 점심'],
+        ['26-04-20', '월급', '월급', '', 3000000, '생활비계좌', '계좌이체', ''],
       ],
     },
     {
       sheetName: '5월',
-      rows: [['26-05-03', '교통', '택시', 18000, '', '', '카드', '']],
+      rows: [['26-05-03', '여행', '택시', 18000, '', '', '카드', '']],
     },
   ]);
 });
@@ -167,7 +198,7 @@ test('buildLogsRowsPayload ignores rows that are completely empty', () => {
       {
         date: '2026-04-10',
         type: '지출',
-        category: '교통',
+        category: '여행',
         description: '택시',
         owner: '',
         paymentMethod: '카드',
@@ -179,7 +210,7 @@ test('buildLogsRowsPayload ignores rows that are completely empty', () => {
   );
 
   assert.deepEqual(rows, [
-    ['26-04-10', '지출', '교통', '택시', '', '카드', 18000, '', '2026-04-10T08:30:00.000Z', ''],
+    ['26-04-10', '지출', '여행', '택시', '', '카드', 18000, '', '2026-04-10T08:30:00.000Z', ''],
   ]);
 });
 
@@ -216,7 +247,7 @@ test('buildLogsRowsPayload throws when amount is not a valid number', () => {
         {
           date: '2026-04-10',
           type: '지출',
-          category: '식비',
+          category: '외식',
           description: '점심',
           owner: '',
           paymentMethod: '카드',
@@ -225,5 +256,62 @@ test('buildLogsRowsPayload throws when amount is not a valid number', () => {
         },
       ]),
     /1번째 항목의 금액은 숫자로 입력해 주세요\./,
+  );
+});
+
+test('buildLogsRowsPayload throws when the category is not allowed for the selected type', () => {
+  assert.throws(
+    () =>
+      buildLogsRowsPayload([
+        {
+          date: '2026-04-10',
+          type: '수입',
+          category: '외식',
+          description: '잘못된 카테고리',
+          owner: '승렬',
+          paymentMethod: '계좌이체',
+          amount: '10000',
+          note: '',
+        },
+      ]),
+    /1번째 항목의 카테고리를 다시 선택해 주세요\./,
+  );
+});
+
+test('buildLogsRowsPayload throws when owner is outside the dropdown options', () => {
+  assert.throws(
+    () =>
+      buildLogsRowsPayload([
+        {
+          date: '2026-04-10',
+          type: '지출',
+          category: '외식',
+          description: '점심',
+          owner: '라이언',
+          paymentMethod: '카드',
+          amount: '12000',
+          note: '',
+        },
+      ]),
+    /1번째 항목의 명의를 다시 선택해 주세요\./,
+  );
+});
+
+test('buildLogsRowsPayload throws when payment method is outside the dropdown options', () => {
+  assert.throws(
+    () =>
+      buildLogsRowsPayload([
+        {
+          date: '2026-04-10',
+          type: '지출',
+          category: '외식',
+          description: '점심',
+          owner: '승렬',
+          paymentMethod: '법인카드',
+          amount: '12000',
+          note: '',
+        },
+      ]),
+    /1번째 항목의 지출방식을 다시 선택해 주세요\./,
   );
 });

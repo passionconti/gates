@@ -8,6 +8,28 @@
   global.GatesEntryHelpers = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const ENTRY_TYPE_OPTIONS = ['수입', '지출'];
+  const EXPENSE_CATEGORY_OPTIONS = [
+    '헌금',
+    '생활비',
+    '경조사비',
+    '부모님 용돈',
+    '선물',
+    '외식',
+    '배달',
+    '운동',
+    '쇼핑',
+    '병원비',
+    '대출금',
+    '시운',
+    '승렬',
+    '신영',
+    '여행',
+    '여가',
+    '세금',
+  ];
+  const INCOME_CATEGORY_OPTIONS = ['월급', '용돈', '시운', '기타'];
+  const OWNER_OPTIONS = ['승렬', '신영', '생활비계좌'];
+  const PAYMENT_METHOD_OPTIONS = ['카카오페이', '네이버페이', '쿠팡카드', '카드', '계좌이체', '현금'];
   const LOGS_HEADER_ROW = [
     'date',
     'type',
@@ -98,6 +120,14 @@
     return `${match[1].slice(-2)}-${match[2]}-${match[3]}`;
   }
 
+  function getCategoryOptionsForType(type) {
+    return type === '수입' ? [...INCOME_CATEGORY_OPTIONS] : [...EXPENSE_CATEGORY_OPTIONS];
+  }
+
+  function ensureAllowedValue(value, options) {
+    return options.includes(toTrimmedString(value));
+  }
+
   function validateRequiredFields(entry, rowNumber) {
     for (const [field, label] of REQUIRED_FIELDS) {
       if (!toTrimmedString(entry[field])) {
@@ -107,6 +137,18 @@
 
     if (!ENTRY_TYPE_OPTIONS.includes(entry.type)) {
       throw new Error(`${rowNumber}번째 항목의 수입/지출 구분을 다시 선택해 주세요.`);
+    }
+
+    if (!ensureAllowedValue(entry.category, getCategoryOptionsForType(entry.type))) {
+      throw new Error(`${rowNumber}번째 항목의 카테고리를 다시 선택해 주세요.`);
+    }
+
+    if (entry.owner && !ensureAllowedValue(entry.owner, OWNER_OPTIONS)) {
+      throw new Error(`${rowNumber}번째 항목의 명의를 다시 선택해 주세요.`);
+    }
+
+    if (entry.paymentMethod && !ensureAllowedValue(entry.paymentMethod, PAYMENT_METHOD_OPTIONS)) {
+      throw new Error(`${rowNumber}번째 항목의 지출방식을 다시 선택해 주세요.`);
     }
   }
 
@@ -138,7 +180,9 @@
   function isLogsHeaderRowComplete(row) {
     const headerRow = Array.isArray(row) ? row : [];
 
-    return LOGS_HEADER_ROW.every((cell, index) => normalizeHeaderCell(headerRow[index]) === normalizeHeaderCell(cell));
+    return LOGS_HEADER_ROW.every(
+      (cell, index) => normalizeHeaderCell(headerRow[index]) === normalizeHeaderCell(cell),
+    );
   }
 
   function buildLogsRow(entry, rowNumber, timestamp, actor) {
@@ -222,12 +266,17 @@
 
   return {
     ENTRY_TYPE_OPTIONS,
+    EXPENSE_CATEGORY_OPTIONS,
+    INCOME_CATEGORY_OPTIONS,
+    OWNER_OPTIONS,
+    PAYMENT_METHOD_OPTIONS,
     createEmptyEntryDraft,
     sanitizeEntryDraft,
     isEntryDraftEmpty,
     getLogsHeaderRow,
     isLogsHeaderRowComplete,
     formatMonthlySheetName,
+    getCategoryOptionsForType,
     buildLogsRowsPayload,
     buildMonthlySheetPayloads,
   };
