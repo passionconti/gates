@@ -15,9 +15,7 @@
   }
 
   function isValidSelection(selection) {
-    return Boolean(
-      selection && toTrimmedString(selection.spreadsheetId) && toTrimmedString(selection.sheetName),
-    );
+    return Boolean(selection && toTrimmedString(selection.spreadsheetId));
   }
 
   function sanitizeSelection(selection) {
@@ -28,7 +26,6 @@
     return {
       spreadsheetId: toTrimmedString(selection.spreadsheetId),
       spreadsheetName: toTrimmedString(selection.spreadsheetName),
-      sheetName: toTrimmedString(selection.sheetName),
       webViewLink: toTrimmedString(selection.webViewLink),
     };
   }
@@ -43,6 +40,8 @@
     return {
       accessToken: toTrimmedString(session.accessToken),
       expiresAt: Number.isFinite(expiresAt) ? expiresAt : null,
+      name: toTrimmedString(session.name),
+      email: toTrimmedString(session.email),
     };
   }
 

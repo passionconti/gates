@@ -27,27 +27,24 @@ function createStorage() {
   };
 }
 
-test('isValidSelection returns true only when spreadsheet and sheet are both present', () => {
-  assert.equal(isValidSelection({ spreadsheetId: 'sheet-1', sheetName: '2026' }), true);
-  assert.equal(isValidSelection({ spreadsheetId: '', sheetName: '2026' }), false);
-  assert.equal(isValidSelection({ spreadsheetId: 'sheet-1', sheetName: '' }), false);
+test('isValidSelection returns true only when spreadsheet is present', () => {
+  assert.equal(isValidSelection({ spreadsheetId: 'sheet-1' }), true);
+  assert.equal(isValidSelection({ spreadsheetId: '', spreadsheetName: '가계부' }), false);
   assert.equal(isValidSelection(null), false);
 });
 
-test('persistSelection stores only the selected spreadsheet and sheet information', () => {
+test('persistSelection stores only the selected spreadsheet information', () => {
   const storage = createStorage();
 
   persistSelection(storage, {
     spreadsheetId: 'spreadsheet-123',
     spreadsheetName: '가계부',
-    sheetName: '2026-04',
     webViewLink: 'https://docs.google.com/spreadsheets/d/123',
   });
 
   assert.deepEqual(readSelection(storage), {
     spreadsheetId: 'spreadsheet-123',
     spreadsheetName: '가계부',
-    sheetName: '2026-04',
     webViewLink: 'https://docs.google.com/spreadsheets/d/123',
   });
 });
@@ -57,7 +54,6 @@ test('clearSelection removes saved selection from storage', () => {
   persistSelection(storage, {
     spreadsheetId: 'spreadsheet-123',
     spreadsheetName: '가계부',
-    sheetName: '2026-04',
     webViewLink: 'https://docs.google.com/spreadsheets/d/123',
   });
 
@@ -76,11 +72,15 @@ test('persistAuthSession stores access token data for the next page', () => {
   persistAuthSession(storage, {
     accessToken: 'token-123',
     expiresAt: 1234567890,
+    name: 'Ryan',
+    email: 'ryan@example.com',
   });
 
   assert.deepEqual(readAuthSession(storage), {
     accessToken: 'token-123',
     expiresAt: 1234567890,
+    name: 'Ryan',
+    email: 'ryan@example.com',
   });
 });
 
@@ -90,6 +90,8 @@ test('clearAuthSession removes saved access token data', () => {
   persistAuthSession(storage, {
     accessToken: 'token-123',
     expiresAt: 1234567890,
+    name: 'Ryan',
+    email: 'ryan@example.com',
   });
   clearAuthSession(storage);
 

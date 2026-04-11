@@ -9,7 +9,6 @@ const result = document.querySelector("#result");
 const selectionForm = document.querySelector("#selection-form");
 const continueButton = document.querySelector("#continue-button");
 const spreadsheetSelect = document.querySelector("#spreadsheet-select");
-const sheetSelect = document.querySelector("#sheet-select");
 const spreadsheetLink = document.querySelector("#spreadsheet-link");
 
 const state = {
@@ -75,7 +74,7 @@ function updateSpreadsheetLink() {
 }
 
 function canContinue() {
-  return Boolean(state.accessToken && spreadsheetSelect.value && sheetSelect.value);
+  return Boolean(state.accessToken && spreadsheetSelect.value);
 }
 
 function updateUiState() {
@@ -85,21 +84,13 @@ function updateUiState() {
   logoutButton.classList.toggle("hidden", !isSignedIn);
   refreshButton.disabled = !isSignedIn;
   spreadsheetSelect.disabled = !isSignedIn;
-  sheetSelect.disabled = !isSignedIn || !spreadsheetSelect.value;
   continueButton.disabled = !canContinue();
 
   authStatus.textContent = isSignedIn
-    ? "Google 인증이 완료되었습니다. 저장할 Spreadsheet와 시트를 선택해 주세요."
+    ? "Google 인증이 완료되었습니다. 저장할 Spreadsheet를 선택해 주세요."
     : "아직 Google 인증이 완료되지 않았습니다.";
 
   updateSpreadsheetLink();
-}
-
-function resetSheetSelection() {
-  setSelectOptions(sheetSelect, "먼저 Spreadsheet를 선택해 주세요", []);
-  sheetSelect.disabled = true;
-  spreadsheetLink.classList.add("hidden");
-  spreadsheetLink.href = "#";
 }
 
 function getGoogleApiHeaders() {
@@ -148,12 +139,33 @@ async function loadConfig() {
   }
 }
 
-function saveAuthSession(accessToken, expiresIn) {
+async function fetchUserProfile() {
+  try {
+    const profile = await fetchJson("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: getGoogleApiHeaders(),
+    });
+
+    return {
+      name: String(profile.name || "").trim(),
+      email: String(profile.email || "").trim(),
+    };
+  } catch (error) {
+    return {
+      name: "",
+      email: "",
+    };
+  }
+}
+
+async function saveAuthSession(accessToken, expiresIn) {
   const expiresAt = Number.isFinite(Number(expiresIn)) ? Date.now() + Number(expiresIn) * 1000 : null;
+  const profile = await fetchUserProfile();
 
   GatesShared.persistAuthSession(window.sessionStorage, {
     accessToken,
     expiresAt,
+    name: profile.name,
+    email: profile.email,
   });
 }
 
@@ -183,7 +195,7 @@ function initializeGoogleAuth() {
       }
 
       state.accessToken = response.access_token;
-      saveAuthSession(response.access_token, response.expires_in);
+      await saveAuthSession(response.access_token, response.expires_in);
       clearResult();
       updateUiState();
 
@@ -217,7 +229,6 @@ function signOut() {
   GatesShared.clearAuthSession(window.sessionStorage);
   GatesShared.clearSelection(window.localStorage);
   setSelectOptions(spreadsheetSelect, "로그인 후 파일 목록을 불러옵니다", []);
-  resetSheetSelection();
   clearResult();
   updateUiState();
 }
@@ -225,7 +236,6 @@ function signOut() {
 async function loadSpreadsheets() {
   clearResult();
   setSelectOptions(spreadsheetSelect, "Spreadsheet 목록을 불러오는 중...", []);
-  resetSheetSelection();
 
   const params = new URLSearchParams({
     q: "mimeType='application/vnd.google-apps.spreadsheet' and trashed=false",
@@ -262,44 +272,6 @@ async function loadSpreadsheets() {
   restorePreviousSelection();
 }
 
-async function loadSheetsForSpreadsheet(spreadsheetId, preferredSheetName = "") {
-  resetSheetSelection();
-  setSelectOptions(sheetSelect, "시트 탭을 불러오는 중...", []);
-  updateSpreadsheetLink();
-
-  const data = await fetchJson(
-    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=sheets(properties(title,sheetId))`,
-    {
-      headers: getGoogleApiHeaders(),
-    },
-  );
-
-  const sheets = (data.sheets || []).map((sheet) => sheet.properties?.title).filter(Boolean);
-
-  if (sheets.length === 0) {
-    setSelectOptions(sheetSelect, "사용 가능한 시트 탭이 없습니다", []);
-    setResult("error", "선택한 Spreadsheet에서 사용할 시트 탭을 찾지 못했습니다.");
-    updateUiState();
-    return;
-  }
-
-  setSelectOptions(
-    sheetSelect,
-    "기록할 시트 탭을 선택해 주세요",
-    sheets.map((sheetName) => ({
-      value: sheetName,
-      label: sheetName,
-    })),
-  );
-
-  if (preferredSheetName && sheets.includes(preferredSheetName)) {
-    sheetSelect.value = preferredSheetName;
-  }
-
-  sheetSelect.disabled = false;
-  updateUiState();
-}
-
 function restorePreviousSelection() {
   const savedSelection = GatesShared.readSelection(window.localStorage);
 
@@ -316,9 +288,6 @@ function restorePreviousSelection() {
 
   spreadsheetSelect.value = savedSelection.spreadsheetId;
   updateUiState();
-  loadSheetsForSpreadsheet(savedSelection.spreadsheetId, savedSelection.sheetName).catch((error) => {
-    setResult("error", error.message);
-  });
 }
 
 loginButton.addEventListener("click", () => {
@@ -341,20 +310,9 @@ spreadsheetSelect.addEventListener("change", async () => {
   clearResult();
 
   if (!spreadsheetSelect.value) {
-    resetSheetSelection();
     updateUiState();
     return;
   }
-
-  try {
-    await loadSheetsForSpreadsheet(spreadsheetSelect.value);
-  } catch (error) {
-    resetSheetSelection();
-    setResult("error", error.message);
-  }
-});
-
-sheetSelect.addEventListener("change", () => {
   updateUiState();
 });
 
@@ -363,7 +321,7 @@ selectionForm.addEventListener("submit", (event) => {
   clearResult();
 
   if (!canContinue()) {
-    setResult("error", "Google 인증 후 Spreadsheet와 시트 탭을 모두 선택해 주세요.");
+    setResult("error", "Google 인증 후 저장할 Spreadsheet를 선택해 주세요.");
     return;
   }
 
@@ -372,7 +330,6 @@ selectionForm.addEventListener("submit", (event) => {
   GatesShared.persistSelection(window.localStorage, {
     spreadsheetId: spreadsheetSelect.value,
     spreadsheetName: selectedSpreadsheet?.name || "",
-    sheetName: sheetSelect.value,
     webViewLink: selectedSpreadsheet?.webViewLink || "",
   });
 
@@ -381,7 +338,6 @@ selectionForm.addEventListener("submit", (event) => {
 
 async function initialize() {
   setSelectOptions(spreadsheetSelect, "로그인 후 파일 목록을 불러옵니다", []);
-  resetSheetSelection();
   restoreAuthSession();
   updateUiState();
 
