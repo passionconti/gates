@@ -237,39 +237,39 @@ button.secondary {
 }
 
 .entry-col-date {
-  width: 170px;
+  width: 140px;
 }
 
 .entry-col-type {
-  width: 110px;
+  width: 92px;
 }
 
 .entry-col-category {
-  width: 150px;
+  width: 126px;
 }
 
 .entry-col-description {
-  width: 220px;
+  width: 180px;
 }
 
 .entry-col-owner {
-  width: 150px;
+  width: 118px;
 }
 
 .entry-col-payment {
-  width: 150px;
+  width: 126px;
 }
 
 .entry-col-amount {
-  width: 120px;
+  width: 96px;
 }
 
 .entry-col-note {
-  width: 160px;
+  width: 126px;
 }
 
 .entry-col-delete {
-  width: 72px;
+  width: 56px;
 }
 
 .entry-table-wrap {
@@ -355,14 +355,14 @@ button.secondary {
 
 @media (min-width: 721px) {
   .entry-table-wrap {
-    overflow-x: auto;
+    overflow-x: hidden;
     border: 1px solid var(--line);
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.45);
   }
 
   .entry-table {
-    min-width: 1302px;
+    min-width: 1040px;
     table-layout: fixed;
   }
 
@@ -405,7 +405,7 @@ button.secondary {
   }
 
   .entry-table input[name="dateDisplay"] {
-    min-width: 132px;
+    min-width: 120px;
   }
 
   .entry-table tbody td::before {

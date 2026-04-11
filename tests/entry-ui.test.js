@@ -22,10 +22,11 @@ test('delete control is rendered as an icon button instead of text', () => {
 test('desktop table hides the delete header text while keeping explicit column widths', () => {
   assert.match(entryHtml, /<colgroup>[\s\S]*entry-col-date[\s\S]*entry-col-delete[\s\S]*<\/colgroup>/);
   assert.doesNotMatch(entryHtml, /<th scope="col">삭제<\/th>/);
-  assert.match(stylesCss, /\.entry-col-date\s*\{[\s\S]*width:\s*170px;/);
-  assert.match(stylesCss, /\.entry-col-description\s*\{[\s\S]*width:\s*220px;/);
-  assert.match(stylesCss, /\.entry-col-owner\s*\{[\s\S]*width:\s*150px;/);
-  assert.match(stylesCss, /\.entry-col-delete\s*\{[\s\S]*width:\s*72px;/);
+  assert.match(stylesCss, /\.entry-col-date\s*\{[\s\S]*width:\s*140px;/);
+  assert.match(stylesCss, /\.entry-col-description\s*\{[\s\S]*width:\s*180px;/);
+  assert.match(stylesCss, /\.entry-col-owner\s*\{[\s\S]*width:\s*118px;/);
+  assert.match(stylesCss, /\.entry-col-delete\s*\{[\s\S]*width:\s*56px;/);
+  assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table\s*\{[\s\S]*min-width:\s*1040px;/);
 });
 
 test('desktop date input uses a custom text-style short-year format instead of native date UI', () => {
