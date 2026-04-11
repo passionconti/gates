@@ -18,6 +18,7 @@ test('desktop layout shows a real table header and table rows', () => {
   assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table tbody\s*\{[\s\S]*display:\s*table-row-group;/);
   assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table \.entry-row\s*\{[\s\S]*display:\s*table-row;/);
   assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table tbody td::before\s*\{[\s\S]*content:\s*none;/);
+  assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table input\[type="date"\]\s*\{[\s\S]*min-width:\s*150px;/);
 });
 
 test('mobile layout keeps the current card-style rows', () => {

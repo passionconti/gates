@@ -13,14 +13,14 @@ const {
   PAYMENT_METHOD_OPTIONS,
 } = require('../public/entry-helpers.js');
 
-test('createEmptyEntryDraft returns default values for a new row', () => {
+test('createEmptyEntryDraft returns the requested default values for a new row', () => {
   assert.deepEqual(createEmptyEntryDraft('2026-04-10'), {
     date: '2026-04-10',
     type: '지출',
-    category: '',
+    category: '생활비',
     description: '',
-    owner: '',
-    paymentMethod: '',
+    owner: '생활비계좌',
+    paymentMethod: '카드',
     amount: '',
     note: '',
   });

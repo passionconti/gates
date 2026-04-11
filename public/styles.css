@@ -331,6 +331,10 @@ button.secondary {
     vertical-align: middle;
   }
 
+  .entry-table input[type="date"] {
+    min-width: 150px;
+  }
+
   .entry-table tbody td::before {
     content: none;
   }

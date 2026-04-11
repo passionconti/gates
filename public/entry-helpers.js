@@ -58,10 +58,10 @@
     return {
       date: toTrimmedString(defaultDate),
       type: '지출',
-      category: '',
+      category: '생활비',
       description: '',
-      owner: '',
-      paymentMethod: '',
+      owner: '생활비계좌',
+      paymentMethod: '카드',
       amount: '',
       note: '',
     };
@@ -87,12 +87,13 @@
 
   function isEntryDraftEmpty(entry) {
     const draft = sanitizeEntryDraft(entry);
+    const defaultDraft = createEmptyEntryDraft(draft.date);
 
     return [
-      draft.category,
+      draft.category === defaultDraft.category ? '' : draft.category,
       draft.description,
-      draft.owner,
-      draft.paymentMethod,
+      draft.owner === defaultDraft.owner ? '' : draft.owner,
+      draft.paymentMethod === defaultDraft.paymentMethod ? '' : draft.paymentMethod,
       draft.amount,
       draft.note,
     ].every((value) => value === '');
