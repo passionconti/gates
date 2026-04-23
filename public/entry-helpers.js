@@ -26,6 +26,7 @@
     '여행',
     '여가',
     '세금',
+    '기타',
   ];
   const INCOME_CATEGORY_OPTIONS = ['월급', '용돈', '시운', '기타'];
   const OWNER_OPTIONS = ['승렬', '신영', '생활비계좌'];

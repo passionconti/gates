@@ -63,6 +63,7 @@ test('getCategoryOptionsForType returns the allowed dropdown options for each ty
     '여행',
     '여가',
     '세금',
+    '기타',
   ]);
   assert.deepEqual(getCategoryOptionsForType('수입'), ['월급', '용돈', '시운', '기타']);
 });
