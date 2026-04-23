@@ -284,6 +284,11 @@ function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDat
   syncCategoryOptions(row);
   syncDateField(row, { formatDisplay: true });
   updateRowButtons();
+
+  const dateDisplayInput = row.querySelector('[name="dateDisplay"]');
+  dateDisplayInput.focus();
+  dateDisplayInput.select();
+
   return row;
 }
 

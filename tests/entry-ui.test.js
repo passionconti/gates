@@ -45,3 +45,9 @@ test('add row behavior reuses the previous row defaults and supports the cmd+i s
   assert.match(entryJs, /event\.metaKey/);
   assert.match(entryJs, /event\.key\.toLowerCase\(\) === "i"/);
 });
+
+test('newly added rows focus the date field immediately', () => {
+  assert.match(entryJs, /const dateDisplayInput = row\.querySelector\('\[name="dateDisplay"\]'\);/);
+  assert.match(entryJs, /dateDisplayInput\.focus\(\)/);
+  assert.match(entryJs, /dateDisplayInput\.select\(\)/);
+});
