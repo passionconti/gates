@@ -11,6 +11,28 @@ const state = {
   nextRowId: 1,
 };
 
+function getLatestEntryDraft() {
+  const rows = entryRows.querySelectorAll('.entry-row');
+  const latestRow = rows[rows.length - 1];
+
+  if (!latestRow) {
+    return null;
+  }
+
+  syncDateField(latestRow);
+
+  return {
+    date: latestRow.querySelector('[name="date"]').value,
+    type: latestRow.querySelector('[name="type"]').value,
+    category: latestRow.querySelector('[name="category"]').value,
+    description: latestRow.querySelector('[name="description"]').value,
+    owner: latestRow.querySelector('[name="owner"]').value,
+    paymentMethod: latestRow.querySelector('[name="paymentMethod"]').value,
+    amount: latestRow.querySelector('[name="amount"]').value,
+    note: latestRow.querySelector('[name="note"]').value,
+  };
+}
+
 function setResult(type, message) {
   result.className = `result ${type}`;
   result.textContent = message;
@@ -310,8 +332,28 @@ function resetRows() {
   addEntryRow();
 }
 
+function handleAddRow() {
+  const previousDraft = getLatestEntryDraft();
+  const nextDraft = previousDraft
+    ? GatesEntryHelpers.createNextEntryDraft(previousDraft, getTodayDateText())
+    : GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText());
+
+  addEntryRow(nextDraft);
+}
+
 addRowButton.addEventListener("click", () => {
-  addEntryRow();
+  handleAddRow();
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.defaultPrevented || addRowButton.disabled) {
+    return;
+  }
+
+  if (event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "i") {
+    event.preventDefault();
+    handleAddRow();
+  }
 });
 
 entryRows.addEventListener("click", (event) => {

@@ -86,6 +86,24 @@
     };
   }
 
+  function createNextEntryDraft(previousEntry, defaultDate = '') {
+    const previousDraft = sanitizeEntryDraft(previousEntry);
+    const fallbackDraft = createEmptyEntryDraft(defaultDate);
+    const nextCategoryOptions = getCategoryOptionsForType(previousDraft.type);
+
+    return sanitizeEntryDraft({
+      ...fallbackDraft,
+      date: previousDraft.date || fallbackDraft.date,
+      type: previousDraft.type || fallbackDraft.type,
+      category: nextCategoryOptions.includes(previousDraft.category) ? previousDraft.category : fallbackDraft.category,
+      owner: previousDraft.owner || fallbackDraft.owner,
+      paymentMethod: previousDraft.paymentMethod || fallbackDraft.paymentMethod,
+      description: '',
+      amount: '',
+      note: '',
+    });
+  }
+
   function isEntryDraftEmpty(entry) {
     const draft = sanitizeEntryDraft(entry);
     const defaultDraft = createEmptyEntryDraft(draft.date);
@@ -304,6 +322,7 @@
     OWNER_OPTIONS,
     PAYMENT_METHOD_OPTIONS,
     createEmptyEntryDraft,
+    createNextEntryDraft,
     sanitizeEntryDraft,
     isEntryDraftEmpty,
     getLogsHeaderRow,

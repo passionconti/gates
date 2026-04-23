@@ -5,6 +5,7 @@ const {
   buildLogsRowsPayload,
   buildMonthlySheetPayloads,
   createEmptyEntryDraft,
+  createNextEntryDraft,
   formatDesktopDateValue,
   formatMonthlySheetName,
   getCategoryOptionsForType,
@@ -66,6 +67,34 @@ test('getCategoryOptionsForType returns the allowed dropdown options for each ty
     '기타',
   ]);
   assert.deepEqual(getCategoryOptionsForType('수입'), ['월급', '용돈', '시운', '기타']);
+});
+
+test('createNextEntryDraft clones the previous row except for description, amount, and note', () => {
+  assert.deepEqual(
+    createNextEntryDraft(
+      {
+        date: '2026-04-10',
+        type: '지출',
+        category: '기타',
+        description: '점심 회의',
+        owner: '승렬',
+        paymentMethod: '카카오페이',
+        amount: '12000',
+        note: '법카 정산',
+      },
+      '2026-04-11',
+    ),
+    {
+      date: '2026-04-10',
+      type: '지출',
+      category: '기타',
+      description: '',
+      owner: '승렬',
+      paymentMethod: '카카오페이',
+      amount: '',
+      note: '',
+    },
+  );
 });
 
 test('exported dropdown option constants match the supported owner and payment methods', () => {

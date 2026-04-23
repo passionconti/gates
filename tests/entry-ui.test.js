@@ -36,3 +36,12 @@ test('desktop date input uses a custom text-style short-year format instead of n
   assert.match(entryJs, /normalizeDesktopDateValue/);
   assert.doesNotMatch(entryJs, /<input type="date" name="date"/);
 });
+
+test('add row behavior reuses the previous row defaults and supports the cmd+i shortcut', () => {
+  assert.match(entryJs, /createNextEntryDraft/);
+  assert.match(entryJs, /handleAddRow/);
+  assert.match(entryJs, /GatesEntryHelpers\.createNextEntryDraft\(previousDraft, getTodayDateText\(\)\)/);
+  assert.match(entryJs, /window\.addEventListener\("keydown"/);
+  assert.match(entryJs, /event\.metaKey/);
+  assert.match(entryJs, /event\.key\.toLowerCase\(\) === "i"/);
+});
