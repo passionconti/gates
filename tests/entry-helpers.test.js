@@ -6,11 +6,13 @@ const {
   buildMonthlySheetPayloads,
   createEmptyEntryDraft,
   createNextEntryDraft,
+  formatAmountDisplayValue,
   formatDesktopDateValue,
   formatMonthlySheetName,
   getCategoryOptionsForType,
   getLogsHeaderRow,
   isLogsHeaderRowComplete,
+  normalizeAmountInputValue,
   normalizeDesktopDateValue,
   OWNER_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
@@ -37,6 +39,21 @@ test('formatMonthlySheetName converts the date to the M월 format', () => {
 test('formatDesktopDateValue formats YYYY-MM-DD dates as yy.mm.dd for desktop inputs', () => {
   assert.equal(formatDesktopDateValue('2026-04-11'), '26.04.11');
   assert.equal(formatDesktopDateValue('2026-11-03'), '26.11.03');
+});
+
+test('formatAmountDisplayValue adds commas for thousand separators', () => {
+  assert.equal(formatAmountDisplayValue('12000'), '12,000');
+  assert.equal(formatAmountDisplayValue('12345678'), '12,345,678');
+  assert.equal(formatAmountDisplayValue('12,345,678'), '12,345,678');
+  assert.equal(formatAmountDisplayValue('12a34b'), '1,234');
+  assert.equal(formatAmountDisplayValue(''), '');
+});
+
+test('normalizeAmountInputValue strips non-digit characters before formatting', () => {
+  assert.equal(normalizeAmountInputValue('12,345'), '12345');
+  assert.equal(normalizeAmountInputValue('12a34b'), '1234');
+  assert.equal(normalizeAmountInputValue('-1,200원'), '1200');
+  assert.equal(normalizeAmountInputValue(''), '');
 });
 
 test('normalizeDesktopDateValue converts yy.mm.dd desktop input back to YYYY-MM-DD', () => {

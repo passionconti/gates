@@ -129,6 +129,23 @@
     return amount;
   }
 
+  function normalizeAmountInputValue(amountText) {
+    return toTrimmedString(amountText)
+      .replaceAll(',', '')
+      .replaceAll(' ', '')
+      .replace(/\D+/g, '');
+  }
+
+  function formatAmountDisplayValue(amountText) {
+    const normalized = normalizeAmountInputValue(amountText);
+
+    if (!normalized) {
+      return '';
+    }
+
+    return Number(normalized).toLocaleString('en-US');
+  }
+
   function normalizeStoredDate(dateText, rowNumber) {
     const normalized = toTrimmedString(dateText);
     const match = normalized.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -328,6 +345,8 @@
     getLogsHeaderRow,
     isLogsHeaderRowComplete,
     formatMonthlySheetName,
+    normalizeAmountInputValue,
+    formatAmountDisplayValue,
     formatDesktopDateValue,
     normalizeDesktopDateValue,
     getCategoryOptionsForType,

@@ -244,7 +244,7 @@ function createRowElement(draft, rowId) {
       </select>
     </td>
     <td data-label="금액">
-      <input type="number" name="amount" value="${draft.amount}" inputmode="numeric" min="0" step="1" placeholder="12000" required />
+      <input type="text" name="amount" value="${GatesEntryHelpers.formatAmountDisplayValue(draft.amount)}" inputmode="numeric" placeholder="12,000" autocomplete="off" required />
     </td>
     <td data-label="비고">
       <input type="text" name="note" value="${draft.note}" placeholder="메모" />
@@ -283,6 +283,7 @@ function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDat
   entryRows.append(row);
   syncCategoryOptions(row);
   syncDateField(row, { formatDisplay: true });
+  syncAmountField(row);
   updateRowButtons();
 
   const dateDisplayInput = row.querySelector('[name="dateDisplay"]');
@@ -314,9 +315,16 @@ function syncDateField(row, { formatDisplay = false } = {}) {
   }
 }
 
+function syncAmountField(row) {
+  const amountInput = row.querySelector('[name="amount"]');
+  const normalizedAmount = GatesEntryHelpers.normalizeAmountInputValue(amountInput.value);
+  amountInput.value = GatesEntryHelpers.formatAmountDisplayValue(normalizedAmount);
+}
+
 function collectEntryDrafts() {
   return Array.from(entryRows.querySelectorAll(".entry-row")).map((row) => {
     syncDateField(row);
+    syncAmountField(row);
 
     return {
       date: row.querySelector('[name="date"]').value,
@@ -379,6 +387,16 @@ entryRows.addEventListener("change", (event) => {
 
   if (event.target.matches('[name="dateDisplay"]')) {
     syncDateField(row, { formatDisplay: true });
+  }
+
+  if (event.target.matches('[name="amount"]')) {
+    syncAmountField(row);
+  }
+});
+
+entryRows.addEventListener("input", (event) => {
+  if (event.target.matches('[name="amount"]')) {
+    syncAmountField(event.target.closest('.entry-row'));
   }
 });
 
