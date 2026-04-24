@@ -5,11 +5,14 @@ const {
   buildLogsRowsPayload,
   buildMonthlySheetPayloads,
   createEmptyEntryDraft,
+  createNextEntryDraft,
+  formatAmountDisplayValue,
   formatDesktopDateValue,
   formatMonthlySheetName,
   getCategoryOptionsForType,
   getLogsHeaderRow,
   isLogsHeaderRowComplete,
+  normalizeAmountInputValue,
   normalizeDesktopDateValue,
   OWNER_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
@@ -38,6 +41,21 @@ test('formatDesktopDateValue formats YYYY-MM-DD dates as yy.mm.dd for desktop in
   assert.equal(formatDesktopDateValue('2026-11-03'), '26.11.03');
 });
 
+test('formatAmountDisplayValue adds commas for thousand separators', () => {
+  assert.equal(formatAmountDisplayValue('12000'), '12,000');
+  assert.equal(formatAmountDisplayValue('12345678'), '12,345,678');
+  assert.equal(formatAmountDisplayValue('12,345,678'), '12,345,678');
+  assert.equal(formatAmountDisplayValue('12a34b'), '1,234');
+  assert.equal(formatAmountDisplayValue(''), '');
+});
+
+test('normalizeAmountInputValue strips non-digit characters before formatting', () => {
+  assert.equal(normalizeAmountInputValue('12,345'), '12345');
+  assert.equal(normalizeAmountInputValue('12a34b'), '1234');
+  assert.equal(normalizeAmountInputValue('-1,200원'), '1200');
+  assert.equal(normalizeAmountInputValue(''), '');
+});
+
 test('normalizeDesktopDateValue converts yy.mm.dd desktop input back to YYYY-MM-DD', () => {
   assert.equal(normalizeDesktopDateValue('26.04.11'), '2026-04-11');
   assert.equal(normalizeDesktopDateValue('2026.04.11'), '2026-04-11');
@@ -63,8 +81,37 @@ test('getCategoryOptionsForType returns the allowed dropdown options for each ty
     '여행',
     '여가',
     '세금',
+    '기타',
   ]);
   assert.deepEqual(getCategoryOptionsForType('수입'), ['월급', '용돈', '시운', '기타']);
+});
+
+test('createNextEntryDraft clones the previous row except for description, amount, and note', () => {
+  assert.deepEqual(
+    createNextEntryDraft(
+      {
+        date: '2026-04-10',
+        type: '지출',
+        category: '기타',
+        description: '점심 회의',
+        owner: '승렬',
+        paymentMethod: '카카오페이',
+        amount: '12000',
+        note: '법카 정산',
+      },
+      '2026-04-11',
+    ),
+    {
+      date: '2026-04-10',
+      type: '지출',
+      category: '기타',
+      description: '',
+      owner: '승렬',
+      paymentMethod: '카카오페이',
+      amount: '',
+      note: '',
+    },
+  );
 });
 
 test('exported dropdown option constants match the supported owner and payment methods', () => {

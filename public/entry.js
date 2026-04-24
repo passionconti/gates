@@ -11,6 +11,28 @@ const state = {
   nextRowId: 1,
 };
 
+function getLatestEntryDraft() {
+  const rows = entryRows.querySelectorAll('.entry-row');
+  const latestRow = rows[rows.length - 1];
+
+  if (!latestRow) {
+    return null;
+  }
+
+  syncDateField(latestRow);
+
+  return {
+    date: latestRow.querySelector('[name="date"]').value,
+    type: latestRow.querySelector('[name="type"]').value,
+    category: latestRow.querySelector('[name="category"]').value,
+    description: latestRow.querySelector('[name="description"]').value,
+    owner: latestRow.querySelector('[name="owner"]').value,
+    paymentMethod: latestRow.querySelector('[name="paymentMethod"]').value,
+    amount: latestRow.querySelector('[name="amount"]').value,
+    note: latestRow.querySelector('[name="note"]').value,
+  };
+}
+
 function setResult(type, message) {
   result.className = `result ${type}`;
   result.textContent = message;
@@ -222,7 +244,7 @@ function createRowElement(draft, rowId) {
       </select>
     </td>
     <td data-label="금액">
-      <input type="number" name="amount" value="${draft.amount}" inputmode="numeric" min="0" step="1" placeholder="12000" required />
+      <input type="text" name="amount" value="${GatesEntryHelpers.formatAmountDisplayValue(draft.amount)}" inputmode="numeric" placeholder="12,000" autocomplete="off" required />
     </td>
     <td data-label="비고">
       <input type="text" name="note" value="${draft.note}" placeholder="메모" />
@@ -261,7 +283,13 @@ function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDat
   entryRows.append(row);
   syncCategoryOptions(row);
   syncDateField(row, { formatDisplay: true });
+  syncAmountField(row);
   updateRowButtons();
+
+  const dateDisplayInput = row.querySelector('[name="dateDisplay"]');
+  dateDisplayInput.focus();
+  dateDisplayInput.select();
+
   return row;
 }
 
@@ -287,9 +315,16 @@ function syncDateField(row, { formatDisplay = false } = {}) {
   }
 }
 
+function syncAmountField(row) {
+  const amountInput = row.querySelector('[name="amount"]');
+  const normalizedAmount = GatesEntryHelpers.normalizeAmountInputValue(amountInput.value);
+  amountInput.value = GatesEntryHelpers.formatAmountDisplayValue(normalizedAmount);
+}
+
 function collectEntryDrafts() {
   return Array.from(entryRows.querySelectorAll(".entry-row")).map((row) => {
     syncDateField(row);
+    syncAmountField(row);
 
     return {
       date: row.querySelector('[name="date"]').value,
@@ -310,8 +345,28 @@ function resetRows() {
   addEntryRow();
 }
 
+function handleAddRow() {
+  const previousDraft = getLatestEntryDraft();
+  const nextDraft = previousDraft
+    ? GatesEntryHelpers.createNextEntryDraft(previousDraft, getTodayDateText())
+    : GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText());
+
+  addEntryRow(nextDraft);
+}
+
 addRowButton.addEventListener("click", () => {
-  addEntryRow();
+  handleAddRow();
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.defaultPrevented || addRowButton.disabled) {
+    return;
+  }
+
+  if (event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "i") {
+    event.preventDefault();
+    handleAddRow();
+  }
 });
 
 entryRows.addEventListener("click", (event) => {
@@ -332,6 +387,16 @@ entryRows.addEventListener("change", (event) => {
 
   if (event.target.matches('[name="dateDisplay"]')) {
     syncDateField(row, { formatDisplay: true });
+  }
+
+  if (event.target.matches('[name="amount"]')) {
+    syncAmountField(row);
+  }
+});
+
+entryRows.addEventListener("input", (event) => {
+  if (event.target.matches('[name="amount"]')) {
+    syncAmountField(event.target.closest('.entry-row'));
   }
 });
 

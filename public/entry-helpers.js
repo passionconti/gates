@@ -26,6 +26,7 @@
     '여행',
     '여가',
     '세금',
+    '기타',
   ];
   const INCOME_CATEGORY_OPTIONS = ['월급', '용돈', '시운', '기타'];
   const OWNER_OPTIONS = ['승렬', '신영', '생활비계좌'];
@@ -85,6 +86,24 @@
     };
   }
 
+  function createNextEntryDraft(previousEntry, defaultDate = '') {
+    const previousDraft = sanitizeEntryDraft(previousEntry);
+    const fallbackDraft = createEmptyEntryDraft(defaultDate);
+    const nextCategoryOptions = getCategoryOptionsForType(previousDraft.type);
+
+    return sanitizeEntryDraft({
+      ...fallbackDraft,
+      date: previousDraft.date || fallbackDraft.date,
+      type: previousDraft.type || fallbackDraft.type,
+      category: nextCategoryOptions.includes(previousDraft.category) ? previousDraft.category : fallbackDraft.category,
+      owner: previousDraft.owner || fallbackDraft.owner,
+      paymentMethod: previousDraft.paymentMethod || fallbackDraft.paymentMethod,
+      description: '',
+      amount: '',
+      note: '',
+    });
+  }
+
   function isEntryDraftEmpty(entry) {
     const draft = sanitizeEntryDraft(entry);
     const defaultDraft = createEmptyEntryDraft(draft.date);
@@ -108,6 +127,23 @@
     }
 
     return amount;
+  }
+
+  function normalizeAmountInputValue(amountText) {
+    return toTrimmedString(amountText)
+      .replaceAll(',', '')
+      .replaceAll(' ', '')
+      .replace(/\D+/g, '');
+  }
+
+  function formatAmountDisplayValue(amountText) {
+    const normalized = normalizeAmountInputValue(amountText);
+
+    if (!normalized) {
+      return '';
+    }
+
+    return Number(normalized).toLocaleString('en-US');
   }
 
   function normalizeStoredDate(dateText, rowNumber) {
@@ -303,11 +339,14 @@
     OWNER_OPTIONS,
     PAYMENT_METHOD_OPTIONS,
     createEmptyEntryDraft,
+    createNextEntryDraft,
     sanitizeEntryDraft,
     isEntryDraftEmpty,
     getLogsHeaderRow,
     isLogsHeaderRowComplete,
     formatMonthlySheetName,
+    normalizeAmountInputValue,
+    formatAmountDisplayValue,
     formatDesktopDateValue,
     normalizeDesktopDateValue,
     getCategoryOptionsForType,
