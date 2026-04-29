@@ -36,6 +36,8 @@ make up
 make status
 make oauth-origin
 make oauth-open
+make tf-fmt
+make tf-validate
 make stop
 ```
 
@@ -45,6 +47,8 @@ make stop
 2. 출력된 ngrok URL 확인
 3. `make oauth-open`으로 Google Cloud Console 자격 증명 페이지 열기
 4. `make oauth-origin` 출력값을 승인된 JavaScript 원본에 붙여 넣기
+
+OCI 인스턴스 배포용 Terraform starter는 `infra/oci-instance/README.md`에 정리되어 있습니다.
 
 ## 환경변수
 
@@ -75,6 +79,8 @@ GOOGLE_OAUTH_CLIENT_ID=your_g...here
 - `http://127.0.0.1:3000`
 
 배포 환경이 있다면 해당 URL도 같은 OAuth 클라이언트에 추가해야 합니다.
+
+Oracle Cloud Infrastructure(OCI) 인스턴스 기반 배포를 준비하려면 `infra/oci-instance/README.md`를 참고하세요.
 
 ### ngrok으로 임시 공개하기
 

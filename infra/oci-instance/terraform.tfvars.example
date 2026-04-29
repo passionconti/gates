@@ -1,0 +1,21 @@
+tenancy_ocid           = "ocid1.tenancy.oc1..replace-me"
+user_ocid              = "ocid1.user.oc1..replace-me"
+fingerprint            = "aa:bb:cc:dd:ee:ff:00:11:22:33:44:55:66:77:88:99"
+private_key_path       = "/root/.oci/oci_api_key.pem"
+region                 = "us-phoenix-1"
+compartment_ocid       = "ocid1.compartment.oc1..replace-me"
+availability_domain    = "Uocm:PHX-AD-1"
+ssh_public_key_path    = "/root/.ssh/id_ed25519.pub"
+google_oauth_client_id = "1234567890-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+
+project_name = "gates"
+environment  = "dev"
+
+instance_shape         = "VM.Standard.E2.1.Micro"
+image_operating_system = "Oracle Linux"
+image_operating_system_version = "9"
+assign_public_ip       = true
+service_port           = 80
+
+app_git_repo = "https://github.com/passionconti/gates.git"
+app_git_ref  = "main"

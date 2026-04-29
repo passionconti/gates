@@ -1,10 +1,11 @@
-.PHONY: help install serve dev ngrok up stop status tunnel-url oauth-origin oauth-open
+.PHONY: help install serve dev ngrok up stop status tunnel-url oauth-origin oauth-open tf-fmt tf-validate
 
 PORT ?= 3000
 HOST ?= 127.0.0.1
 RUN_DIR := .run
 SERVER_PID_FILE := $(RUN_DIR)/server.pid
 NGROK_PID_FILE := $(RUN_DIR)/ngrok.pid
+TERRAFORM_IMAGE ?= hashicorp/terraform:1.11.4
 
 help:
 	@echo "Available targets:"
@@ -18,6 +19,8 @@ help:
 	@echo "  make tunnel-url    # print current ngrok public URL"
 	@echo "  make oauth-origin  # print current OAuth authorized JavaScript origin value"
 	@echo "  make oauth-open    # open Google Cloud credentials page and print current origin"
+	@echo "  make tf-fmt        # format OCI Terraform files using Dockerized Terraform"
+	@echo "  make tf-validate   # init and validate OCI Terraform files using Dockerized Terraform"
 
 install:
 	npm install
@@ -58,3 +61,23 @@ oauth-open:
 	if command -v open >/dev/null 2>&1; then \
 		open https://console.cloud.google.com/apis/credentials; \
 	fi
+
+tf-fmt:
+	docker run --rm \
+	  -v "$(PWD):/workspace" \
+	  -w /workspace/infra/oci-instance \
+	  $(TERRAFORM_IMAGE) fmt -recursive
+
+tf-validate:
+	docker run --rm \
+	  -v "$(PWD):/workspace" \
+	  -v "$(HOME)/.oci:/root/.oci:ro" \
+	  -v "$(HOME)/.ssh:/root/.ssh:ro" \
+	  -w /workspace/infra/oci-instance \
+	  $(TERRAFORM_IMAGE) init -backend=false
+	docker run --rm \
+	  -v "$(PWD):/workspace" \
+	  -v "$(HOME)/.oci:/root/.oci:ro" \
+	  -v "$(HOME)/.ssh:/root/.ssh:ro" \
+	  -w /workspace/infra/oci-instance \
+	  $(TERRAFORM_IMAGE) validate

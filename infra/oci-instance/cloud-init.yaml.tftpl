@@ -1,0 +1,55 @@
+#cloud-config
+write_files:
+  - path: /etc/gates/gates.env
+    permissions: '0644'
+    owner: root:root
+    content: |
+      NODE_ENV=production
+      HOST=0.0.0.0
+      PORT=8080
+      GOOGLE_OAUTH_CLIENT_ID=${google_oauth_client_id}
+  - path: /usr/local/bin/deploy-gates.sh
+    permissions: '0755'
+    owner: root:root
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      APP_ROOT=/opt/gates
+      APP_DIR="$APP_ROOT/repo"
+      REPO_URL="${app_git_repo}"
+      APP_REF="${app_git_ref}"
+      ENV_FILE=/etc/gates/gates.env
+      IMAGE_NAME=gates-app:latest
+      CONTAINER_NAME=gates-app
+
+      mkdir -p "$APP_ROOT"
+
+      if [ ! -d "$APP_DIR/.git" ]; then
+        git clone "$REPO_URL" "$APP_DIR"
+      fi
+
+      cd "$APP_DIR"
+      git fetch origin --tags
+
+      if git ls-remote --exit-code --heads origin "$APP_REF" >/dev/null 2>&1; then
+        git checkout -B deployed "origin/$APP_REF"
+      else
+        git checkout "$APP_REF"
+      fi
+
+      docker build -t "$IMAGE_NAME" .
+      docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
+      docker run -d \
+        --name "$CONTAINER_NAME" \
+        --restart unless-stopped \
+        --env-file "$ENV_FILE" \
+        -p ${service_port}:8080 \
+        "$IMAGE_NAME"
+runcmd:
+  - dnf install -y git docker
+  - systemctl enable --now docker
+  - firewall-cmd --permanent --add-service=http || true
+  - firewall-cmd --permanent --add-service=https || true
+  - firewall-cmd --reload || true
+  - /usr/local/bin/deploy-gates.sh
