@@ -265,6 +265,32 @@ function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDat
   return row;
 }
 
+function focusFirstEditableField(row) {
+  const firstInput = row?.querySelector('input[type="text"], input[type="number"], select');
+  firstInput?.focus();
+  firstInput?.select?.();
+}
+
+function isShortcutEvent(event, key) {
+  if (event.defaultPrevented || event.repeat || event.isComposing) {
+    return false;
+  }
+
+  if (event.key?.toLowerCase() !== key) {
+    return false;
+  }
+
+  return (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey;
+}
+
+function isAddRowShortcut(event) {
+  return isShortcutEvent(event, 'l');
+}
+
+function isDuplicatePreviousRowShortcut(event) {
+  return isShortcutEvent(event, 'd');
+}
+
 function removeEntryRow(button) {
   const row = button.closest(".entry-row");
   if (!row || entryRows.children.length === 1) {
@@ -287,21 +313,55 @@ function syncDateField(row, { formatDisplay = false } = {}) {
   }
 }
 
-function collectEntryDrafts() {
-  return Array.from(entryRows.querySelectorAll(".entry-row")).map((row) => {
-    syncDateField(row);
+function getRowDraft(row) {
+  syncDateField(row);
 
-    return {
-      date: row.querySelector('[name="date"]').value,
-      type: row.querySelector('[name="type"]').value,
-      category: row.querySelector('[name="category"]').value,
-      description: row.querySelector('[name="description"]').value,
-      owner: row.querySelector('[name="owner"]').value,
-      paymentMethod: row.querySelector('[name="paymentMethod"]').value,
-      amount: row.querySelector('[name="amount"]').value,
-      note: row.querySelector('[name="note"]').value,
-    };
-  });
+  return {
+    date: row.querySelector('[name="date"]').value,
+    type: row.querySelector('[name="type"]').value,
+    category: row.querySelector('[name="category"]').value,
+    description: row.querySelector('[name="description"]').value,
+    owner: row.querySelector('[name="owner"]').value,
+    paymentMethod: row.querySelector('[name="paymentMethod"]').value,
+    amount: row.querySelector('[name="amount"]').value,
+    note: row.querySelector('[name="note"]').value,
+  };
+}
+
+function collectEntryDrafts() {
+  return Array.from(entryRows.querySelectorAll(".entry-row")).map((row) => getRowDraft(row));
+}
+
+function replaceRowDraft(row, draft) {
+  const sanitizedDraft = GatesEntryHelpers.sanitizeEntryDraft(draft);
+
+  row.querySelector('[name="date"]').value = sanitizedDraft.date;
+  row.querySelector('[name="dateDisplay"]').value = sanitizedDraft.date;
+  row.querySelector('[name="type"]').value = sanitizedDraft.type;
+  syncCategoryOptions(row);
+  row.querySelector('[name="category"]').value = sanitizedDraft.category;
+  row.querySelector('[name="description"]').value = sanitizedDraft.description;
+  row.querySelector('[name="owner"]').value = sanitizedDraft.owner;
+  row.querySelector('[name="paymentMethod"]').value = sanitizedDraft.paymentMethod;
+  row.querySelector('[name="amount"]').value = sanitizedDraft.amount;
+  row.querySelector('[name="note"]').value = sanitizedDraft.note;
+  syncDateField(row, { formatDisplay: true });
+}
+
+function duplicatePreviousRowFromFocus() {
+  const currentRow = document.activeElement?.closest?.('.entry-row');
+  if (!currentRow) {
+    return false;
+  }
+
+  const previousRow = currentRow.previousElementSibling;
+  if (!previousRow?.classList.contains('entry-row')) {
+    return false;
+  }
+
+  replaceRowDraft(currentRow, getRowDraft(previousRow));
+  focusFirstEditableField(currentRow);
+  return true;
 }
 
 function resetRows() {
@@ -311,7 +371,22 @@ function resetRows() {
 }
 
 addRowButton.addEventListener("click", () => {
-  addEntryRow();
+  const row = addEntryRow();
+  focusFirstEditableField(row);
+});
+
+window.addEventListener("keydown", (event) => {
+  if (isAddRowShortcut(event)) {
+    event.preventDefault();
+    const row = addEntryRow();
+    focusFirstEditableField(row);
+    return;
+  }
+
+  if (isDuplicatePreviousRowShortcut(event)) {
+    event.preventDefault();
+    duplicatePreviousRowFromFocus();
+  }
 });
 
 entryRows.addEventListener("click", (event) => {
