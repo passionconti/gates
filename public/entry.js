@@ -348,8 +348,18 @@ function replaceRowDraft(row, draft) {
   syncDateField(row, { formatDisplay: true });
 }
 
+function getActiveEntryRow() {
+  const focusedRow = document.activeElement?.closest?.('.entry-row');
+  if (focusedRow) {
+    return focusedRow;
+  }
+
+  const rows = entryRows.querySelectorAll('.entry-row');
+  return rows.length > 0 ? rows[rows.length - 1] : null;
+}
+
 function duplicatePreviousRowFromFocus() {
-  const currentRow = document.activeElement?.closest?.('.entry-row');
+  const currentRow = getActiveEntryRow();
   if (!currentRow) {
     return false;
   }
@@ -375,7 +385,7 @@ addRowButton.addEventListener("click", () => {
   focusFirstEditableField(row);
 });
 
-window.addEventListener("keydown", (event) => {
+document.addEventListener("keydown", (event) => {
   if (isAddRowShortcut(event)) {
     event.preventDefault();
     const row = addEntryRow();
@@ -383,11 +393,11 @@ window.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (isDuplicatePreviousRowShortcut(event)) {
+  if (isDuplicatePreviousRowShortcut(event) && duplicatePreviousRowFromFocus()) {
     event.preventDefault();
-    duplicatePreviousRowFromFocus();
+    event.stopPropagation();
   }
-});
+}, true);
 
 entryRows.addEventListener("click", (event) => {
   const button = event.target.closest(".remove-row-button");
