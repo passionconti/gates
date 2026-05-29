@@ -392,17 +392,13 @@ function getActiveEntryRow() {
   return rows.length > 0 ? rows[rows.length - 1] : null;
 }
 
-function duplicatePreviousRowFromFocus() {
+function duplicateActiveRowFromFocus() {
   const currentRow = getActiveEntryRow();
   if (!currentRow) {
     return false;
   }
 
-  const sourceRow = currentRow.previousElementSibling?.classList.contains('entry-row')
-    ? currentRow.previousElementSibling
-    : currentRow;
-
-  const duplicatedRow = insertEntryRowAfter(currentRow, getRowDraft(sourceRow));
+  const duplicatedRow = insertEntryRowAfter(currentRow, getRowDraft(currentRow));
   focusFirstEditableField(duplicatedRow);
   return true;
 }
@@ -426,7 +422,7 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (isDuplicatePreviousRowShortcut(event) && duplicatePreviousRowFromFocus()) {
+  if (isDuplicatePreviousRowShortcut(event) && duplicateActiveRowFromFocus()) {
     event.preventDefault();
     event.stopPropagation();
   }
