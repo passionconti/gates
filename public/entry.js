@@ -250,7 +250,7 @@ function updateRowButtons() {
   });
 }
 
-function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText())) {
+function buildEntryRowElement(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText())) {
   const row = createRowElement(
     GatesEntryHelpers.sanitizeEntryDraft({
       ...GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText()),
@@ -258,9 +258,21 @@ function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDat
     }),
     state.nextRowId++,
   );
-  entryRows.append(row);
   syncCategoryOptions(row);
   syncDateField(row, { formatDisplay: true });
+  return row;
+}
+
+function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText())) {
+  const row = buildEntryRowElement(draft);
+  entryRows.append(row);
+  updateRowButtons();
+  return row;
+}
+
+function insertEntryRowAfter(targetRow, draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText())) {
+  const row = buildEntryRowElement(draft);
+  targetRow?.after(row);
   updateRowButtons();
   return row;
 }
@@ -310,7 +322,7 @@ function isAddRowShortcut(event) {
 }
 
 function isDuplicatePreviousRowShortcut(event) {
-  return isShortcutEvent(event, 'd', { requireAlt: true, allowAlt: true });
+  return isShortcutEvent(event, 'd');
 }
 
 function removeEntryRow(button) {
@@ -386,13 +398,12 @@ function duplicatePreviousRowFromFocus() {
     return false;
   }
 
-  const previousRow = currentRow.previousElementSibling;
-  if (!previousRow?.classList.contains('entry-row')) {
-    return false;
-  }
+  const sourceRow = currentRow.previousElementSibling?.classList.contains('entry-row')
+    ? currentRow.previousElementSibling
+    : currentRow;
 
-  replaceRowDraft(currentRow, getRowDraft(previousRow));
-  focusFirstEditableField(currentRow);
+  const duplicatedRow = insertEntryRowAfter(currentRow, getRowDraft(sourceRow));
+  focusFirstEditableField(duplicatedRow);
   return true;
 }
 
