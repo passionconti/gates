@@ -271,7 +271,7 @@ function focusFirstEditableField(row) {
   firstInput?.select?.();
 }
 
-function isShortcutEvent(event, key) {
+function isShortcutEvent(event, key, options = {}) {
   if (event.defaultPrevented || event.repeat || event.isComposing) {
     return false;
   }
@@ -280,7 +280,29 @@ function isShortcutEvent(event, key) {
     return false;
   }
 
-  return (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey;
+  const {
+    allowAlt = false,
+    requireAlt = false,
+    allowShift = false,
+  } = options;
+
+  if (!(event.metaKey || event.ctrlKey)) {
+    return false;
+  }
+
+  if (requireAlt && !event.altKey) {
+    return false;
+  }
+
+  if (!allowAlt && event.altKey) {
+    return false;
+  }
+
+  if (!allowShift && event.shiftKey) {
+    return false;
+  }
+
+  return true;
 }
 
 function isAddRowShortcut(event) {
@@ -288,7 +310,7 @@ function isAddRowShortcut(event) {
 }
 
 function isDuplicatePreviousRowShortcut(event) {
-  return isShortcutEvent(event, 'd');
+  return isShortcutEvent(event, 'd', { requireAlt: true, allowAlt: true });
 }
 
 function removeEntryRow(button) {
