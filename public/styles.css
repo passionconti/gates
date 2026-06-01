@@ -261,7 +261,7 @@ button.secondary {
 }
 
 .entry-col-amount {
-  width: 96px;
+  width: 136px;
 }
 
 .entry-col-note {
@@ -332,6 +332,7 @@ button.secondary {
 
 .entry-table input[type="number"] {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .entry-table input[name="dateDisplay"] {
@@ -355,14 +356,14 @@ button.secondary {
 
 @media (min-width: 721px) {
   .entry-table-wrap {
-    overflow-x: hidden;
+    overflow-x: auto;
     border: 1px solid var(--line);
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.45);
   }
 
   .entry-table {
-    min-width: 1040px;
+    min-width: 1120px;
     table-layout: fixed;
   }
 
