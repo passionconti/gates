@@ -250,7 +250,7 @@ function updateRowButtons() {
   });
 }
 
-function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText())) {
+function buildEntryRowElement(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText())) {
   const row = createRowElement(
     GatesEntryHelpers.sanitizeEntryDraft({
       ...GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText()),
@@ -258,11 +258,71 @@ function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDat
     }),
     state.nextRowId++,
   );
-  entryRows.append(row);
   syncCategoryOptions(row);
   syncDateField(row, { formatDisplay: true });
+  return row;
+}
+
+function addEntryRow(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText())) {
+  const row = buildEntryRowElement(draft);
+  entryRows.append(row);
   updateRowButtons();
   return row;
+}
+
+function insertEntryRowAfter(targetRow, draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText())) {
+  const row = buildEntryRowElement(draft);
+  targetRow?.after(row);
+  updateRowButtons();
+  return row;
+}
+
+function focusFirstEditableField(row) {
+  const firstInput = row?.querySelector('input[type="text"], input[type="number"], select');
+  firstInput?.focus();
+  firstInput?.select?.();
+}
+
+function isShortcutEvent(event, key, options = {}) {
+  if (event.defaultPrevented || event.repeat || event.isComposing) {
+    return false;
+  }
+
+  if (event.key?.toLowerCase() !== key) {
+    return false;
+  }
+
+  const {
+    allowAlt = false,
+    requireAlt = false,
+    allowShift = false,
+  } = options;
+
+  if (!(event.metaKey || event.ctrlKey)) {
+    return false;
+  }
+
+  if (requireAlt && !event.altKey) {
+    return false;
+  }
+
+  if (!allowAlt && event.altKey) {
+    return false;
+  }
+
+  if (!allowShift && event.shiftKey) {
+    return false;
+  }
+
+  return true;
+}
+
+function isAddRowShortcut(event) {
+  return isShortcutEvent(event, 'l');
+}
+
+function isDuplicatePreviousRowShortcut(event) {
+  return isShortcutEvent(event, 'd');
 }
 
 function removeEntryRow(button) {
@@ -287,21 +347,60 @@ function syncDateField(row, { formatDisplay = false } = {}) {
   }
 }
 
-function collectEntryDrafts() {
-  return Array.from(entryRows.querySelectorAll(".entry-row")).map((row) => {
-    syncDateField(row);
+function getRowDraft(row) {
+  syncDateField(row);
 
-    return {
-      date: row.querySelector('[name="date"]').value,
-      type: row.querySelector('[name="type"]').value,
-      category: row.querySelector('[name="category"]').value,
-      description: row.querySelector('[name="description"]').value,
-      owner: row.querySelector('[name="owner"]').value,
-      paymentMethod: row.querySelector('[name="paymentMethod"]').value,
-      amount: row.querySelector('[name="amount"]').value,
-      note: row.querySelector('[name="note"]').value,
-    };
-  });
+  return {
+    date: row.querySelector('[name="date"]').value,
+    type: row.querySelector('[name="type"]').value,
+    category: row.querySelector('[name="category"]').value,
+    description: row.querySelector('[name="description"]').value,
+    owner: row.querySelector('[name="owner"]').value,
+    paymentMethod: row.querySelector('[name="paymentMethod"]').value,
+    amount: row.querySelector('[name="amount"]').value,
+    note: row.querySelector('[name="note"]').value,
+  };
+}
+
+function collectEntryDrafts() {
+  return Array.from(entryRows.querySelectorAll(".entry-row")).map((row) => getRowDraft(row));
+}
+
+function replaceRowDraft(row, draft) {
+  const sanitizedDraft = GatesEntryHelpers.sanitizeEntryDraft(draft);
+
+  row.querySelector('[name="date"]').value = sanitizedDraft.date;
+  row.querySelector('[name="dateDisplay"]').value = sanitizedDraft.date;
+  row.querySelector('[name="type"]').value = sanitizedDraft.type;
+  syncCategoryOptions(row);
+  row.querySelector('[name="category"]').value = sanitizedDraft.category;
+  row.querySelector('[name="description"]').value = sanitizedDraft.description;
+  row.querySelector('[name="owner"]').value = sanitizedDraft.owner;
+  row.querySelector('[name="paymentMethod"]').value = sanitizedDraft.paymentMethod;
+  row.querySelector('[name="amount"]').value = sanitizedDraft.amount;
+  row.querySelector('[name="note"]').value = sanitizedDraft.note;
+  syncDateField(row, { formatDisplay: true });
+}
+
+function getActiveEntryRow() {
+  const focusedRow = document.activeElement?.closest?.('.entry-row');
+  if (focusedRow) {
+    return focusedRow;
+  }
+
+  const rows = entryRows.querySelectorAll('.entry-row');
+  return rows.length > 0 ? rows[rows.length - 1] : null;
+}
+
+function duplicateActiveRowFromFocus() {
+  const currentRow = getActiveEntryRow();
+  if (!currentRow) {
+    return false;
+  }
+
+  const duplicatedRow = insertEntryRowAfter(currentRow, getRowDraft(currentRow));
+  focusFirstEditableField(duplicatedRow);
+  return true;
 }
 
 function resetRows() {
@@ -311,8 +410,23 @@ function resetRows() {
 }
 
 addRowButton.addEventListener("click", () => {
-  addEntryRow();
+  const row = addEntryRow();
+  focusFirstEditableField(row);
 });
+
+document.addEventListener("keydown", (event) => {
+  if (isAddRowShortcut(event)) {
+    event.preventDefault();
+    const row = addEntryRow();
+    focusFirstEditableField(row);
+    return;
+  }
+
+  if (isDuplicatePreviousRowShortcut(event) && duplicateActiveRowFromFocus()) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}, true);
 
 entryRows.addEventListener("click", (event) => {
   const button = event.target.closest(".remove-row-button");
