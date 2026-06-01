@@ -25,8 +25,11 @@ test('desktop table hides the delete header text while keeping explicit column w
   assert.match(stylesCss, /\.entry-col-date\s*\{[\s\S]*width:\s*140px;/);
   assert.match(stylesCss, /\.entry-col-description\s*\{[\s\S]*width:\s*180px;/);
   assert.match(stylesCss, /\.entry-col-owner\s*\{[\s\S]*width:\s*118px;/);
+  assert.match(stylesCss, /\.entry-col-amount\s*\{[\s\S]*width:\s*136px;/);
   assert.match(stylesCss, /\.entry-col-delete\s*\{[\s\S]*width:\s*56px;/);
-  assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table\s*\{[\s\S]*min-width:\s*1040px;/);
+  assert.match(stylesCss, /\.entry-table input\[name="amount"\]\s*\{[\s\S]*font-variant-numeric:\s*tabular-nums;/);
+  assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table-wrap\s*\{[\s\S]*overflow-x:\s*auto;/);
+  assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table\s*\{[\s\S]*min-width:\s*1120px;/);
 });
 
 test('desktop date input uses a custom text-style short-year format instead of native date UI', () => {
@@ -35,4 +38,11 @@ test('desktop date input uses a custom text-style short-year format instead of n
   assert.match(entryJs, /formatDesktopDateValue/);
   assert.match(entryJs, /normalizeDesktopDateValue/);
   assert.doesNotMatch(entryJs, /<input type="date" name="date"/);
+});
+
+test('amount field uses text input formatting helpers instead of native number steppers', () => {
+  assert.match(entryJs, /<input type="text" name="amount"/);
+  assert.match(entryJs, /formatAmountDisplayValue/);
+  assert.match(entryJs, /normalizeAmountInputValue/);
+  assert.doesNotMatch(entryJs, /<input type="number" name="amount"/);
 });

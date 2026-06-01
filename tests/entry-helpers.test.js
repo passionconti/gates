@@ -5,11 +5,13 @@ const {
   buildLogsRowsPayload,
   buildMonthlySheetPayloads,
   createEmptyEntryDraft,
+  formatAmountDisplayValue,
   formatDesktopDateValue,
   formatMonthlySheetName,
   getCategoryOptionsForType,
   getLogsHeaderRow,
   isLogsHeaderRowComplete,
+  normalizeAmountInputValue,
   normalizeDesktopDateValue,
   OWNER_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
@@ -42,6 +44,20 @@ test('normalizeDesktopDateValue converts yy.mm.dd desktop input back to YYYY-MM-
   assert.equal(normalizeDesktopDateValue('26.04.11'), '2026-04-11');
   assert.equal(normalizeDesktopDateValue('2026.04.11'), '2026-04-11');
   assert.equal(normalizeDesktopDateValue('26-04-11'), '2026-04-11');
+  assert.equal(normalizeDesktopDateValue('260411'), '2026-04-11');
+});
+
+test('normalizeAmountInputValue keeps digits only so formatted amount fields can store raw numbers', () => {
+  assert.equal(normalizeAmountInputValue('12,345원'), '12345');
+  assert.equal(normalizeAmountInputValue(' 001,200 '), '001200');
+  assert.equal(normalizeAmountInputValue(''), '');
+});
+
+test('formatAmountDisplayValue adds thousand separators for amount inputs', () => {
+  assert.equal(formatAmountDisplayValue('12345'), '12,345');
+  assert.equal(formatAmountDisplayValue('001200'), '1,200');
+  assert.equal(formatAmountDisplayValue('abc'), '');
+  assert.equal(formatAmountDisplayValue(''), '');
 });
 
 test('getCategoryOptionsForType returns the allowed dropdown options for each type', () => {

@@ -100,7 +100,7 @@
   }
 
   function parseAmount(amountText, rowNumber) {
-    const normalized = toTrimmedString(amountText).replaceAll(',', '');
+    const normalized = normalizeAmountInputValue(amountText);
     const amount = Number(normalized);
 
     if (!normalized || Number.isNaN(amount)) {
@@ -130,6 +130,20 @@
     }
 
     return `${match[1].slice(-2)}.${match[2]}.${match[3]}`;
+  }
+
+  function normalizeAmountInputValue(amountText) {
+    return toTrimmedString(amountText).replace(/\D/g, '');
+  }
+
+  function formatAmountDisplayValue(amountText) {
+    const normalized = normalizeAmountInputValue(amountText);
+
+    if (!normalized) {
+      return '';
+    }
+
+    return Number(normalized).toLocaleString('ko-KR');
   }
 
   function normalizeDesktopDateValue(dateText) {
@@ -309,6 +323,8 @@
     isLogsHeaderRowComplete,
     formatMonthlySheetName,
     formatDesktopDateValue,
+    normalizeAmountInputValue,
+    formatAmountDisplayValue,
     normalizeDesktopDateValue,
     getCategoryOptionsForType,
     buildLogsRowsPayload,

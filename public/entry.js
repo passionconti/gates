@@ -222,7 +222,7 @@ function createRowElement(draft, rowId) {
       </select>
     </td>
     <td data-label="금액">
-      <input type="number" name="amount" value="${draft.amount}" inputmode="numeric" min="0" step="1" placeholder="12000" required />
+      <input type="text" name="amount" value="${GatesEntryHelpers.formatAmountDisplayValue(draft.amount)}" inputmode="numeric" autocomplete="off" placeholder="12,000" required />
     </td>
     <td data-label="비고">
       <input type="text" name="note" value="${draft.note}" placeholder="메모" />
@@ -260,6 +260,7 @@ function buildEntryRowElement(draft = GatesEntryHelpers.createEmptyEntryDraft(ge
   );
   syncCategoryOptions(row);
   syncDateField(row, { formatDisplay: true });
+  syncAmountField(row, { formatDisplay: true });
   return row;
 }
 
@@ -278,7 +279,7 @@ function insertEntryRowAfter(targetRow, draft = GatesEntryHelpers.createEmptyEnt
 }
 
 function focusFirstEditableField(row) {
-  const firstInput = row?.querySelector('input[type="text"], input[type="number"], select');
+  const firstInput = row?.querySelector('input[type="text"], select');
   firstInput?.focus();
   firstInput?.select?.();
 }
@@ -347,8 +348,18 @@ function syncDateField(row, { formatDisplay = false } = {}) {
   }
 }
 
+function syncAmountField(row, { formatDisplay = false } = {}) {
+  const amountInput = row.querySelector('[name="amount"]');
+  const normalizedAmount = GatesEntryHelpers.normalizeAmountInputValue(amountInput.value);
+
+  amountInput.value = formatDisplay
+    ? GatesEntryHelpers.formatAmountDisplayValue(normalizedAmount)
+    : normalizedAmount;
+}
+
 function getRowDraft(row) {
   syncDateField(row);
+  syncAmountField(row);
 
   return {
     date: row.querySelector('[name="date"]').value,
@@ -380,6 +391,7 @@ function replaceRowDraft(row, draft) {
   row.querySelector('[name="amount"]').value = sanitizedDraft.amount;
   row.querySelector('[name="note"]').value = sanitizedDraft.note;
   syncDateField(row, { formatDisplay: true });
+  syncAmountField(row, { formatDisplay: true });
 }
 
 function getActiveEntryRow() {
@@ -437,6 +449,21 @@ entryRows.addEventListener("click", (event) => {
   removeEntryRow(button);
 });
 
+entryRows.addEventListener("input", (event) => {
+  const row = event.target.closest('.entry-row');
+  if (!row) {
+    return;
+  }
+
+  if (event.target.matches('[name="dateDisplay"]')) {
+    syncDateField(row, { formatDisplay: true });
+  }
+
+  if (event.target.matches('[name="amount"]')) {
+    syncAmountField(row, { formatDisplay: true });
+  }
+});
+
 entryRows.addEventListener("change", (event) => {
   const row = event.target.closest(".entry-row");
 
@@ -447,11 +474,19 @@ entryRows.addEventListener("change", (event) => {
   if (event.target.matches('[name="dateDisplay"]')) {
     syncDateField(row, { formatDisplay: true });
   }
+
+  if (event.target.matches('[name="amount"]')) {
+    syncAmountField(row, { formatDisplay: true });
+  }
 });
 
 entryRows.addEventListener("blur", (event) => {
   if (event.target.matches('[name="dateDisplay"]')) {
     syncDateField(event.target.closest('.entry-row'), { formatDisplay: true });
+  }
+
+  if (event.target.matches('[name="amount"]')) {
+    syncAmountField(event.target.closest('.entry-row'), { formatDisplay: true });
   }
 }, true);
 
