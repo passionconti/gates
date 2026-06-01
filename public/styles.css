@@ -330,7 +330,7 @@ button.secondary {
   text-overflow: ellipsis;
 }
 
-.entry-table input[type="number"] {
+.entry-table input[name="amount"] {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
