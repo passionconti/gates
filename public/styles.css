@@ -354,6 +354,91 @@ button.secondary {
   margin-inline: auto;
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(22, 33, 31, 0.48);
+  backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  position: relative;
+  width: min(1100px, 100%);
+  max-height: min(85vh, 920px);
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 24px;
+  background: rgba(255, 252, 247, 0.96);
+  box-shadow: 0 24px 80px rgba(30, 28, 22, 0.24);
+  overflow: hidden;
+}
+
+.modal-head {
+  align-items: flex-start;
+}
+
+.confirm-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.confirm-table {
+  width: 100%;
+  min-width: 880px;
+  border-collapse: collapse;
+}
+
+.confirm-table th,
+.confirm-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.confirm-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(245, 239, 228, 0.98);
+  color: var(--muted);
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.confirm-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.confirm-amount-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 @media (min-width: 721px) {
   .entry-table-wrap {
     overflow-x: auto;

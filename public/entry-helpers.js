@@ -310,6 +310,29 @@
     }));
   }
 
+  function buildEntryPreviewRows(entries) {
+    return getNonEmptyDrafts(entries).map((entry, index) => {
+      const draft = sanitizeEntryDraft(entry);
+      validateRequiredFields(draft, index + 1);
+      const amount = parseAmount(draft.amount, index + 1);
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(draft.date)) {
+        throw new Error(`${index + 1}번째 항목의 날짜 형식을 다시 확인해 주세요.`);
+      }
+
+      return {
+        date: formatDesktopDateValue(draft.date),
+        type: draft.type,
+        category: draft.category,
+        description: draft.description,
+        owner: draft.owner,
+        paymentMethod: draft.paymentMethod,
+        amount: amount.toLocaleString('ko-KR'),
+        note: draft.note || '-',
+      };
+    });
+  }
+
   return {
     ENTRY_TYPE_OPTIONS,
     EXPENSE_CATEGORY_OPTIONS,
@@ -329,5 +352,6 @@
     getCategoryOptionsForType,
     buildLogsRowsPayload,
     buildMonthlySheetPayloads,
+    buildEntryPreviewRows,
   };
 });

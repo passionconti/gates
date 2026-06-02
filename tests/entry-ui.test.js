@@ -8,6 +8,40 @@ const entryJs = fs.readFileSync(path.join(projectRoot, 'public/entry.js'), 'utf8
 const entryHtml = fs.readFileSync(path.join(projectRoot, 'public/entry.html'), 'utf8');
 const stylesCss = fs.readFileSync(path.join(projectRoot, 'public/styles.css'), 'utf8');
 
+test('confirmation modal styles support a scrollable review table and amount alignment', () => {
+  assert.match(stylesCss, /\.modal\s*\{/);
+  assert.match(stylesCss, /\.modal-card\s*\{[\s\S]*max-height:\s*min\(85vh, 920px\);/);
+  assert.match(stylesCss, /\.confirm-table-wrap\s*\{[\s\S]*overflow:\s*auto;/);
+  assert.match(stylesCss, /\.confirm-table\s*\{[\s\S]*min-width:\s*880px;/);
+  assert.match(stylesCss, /\.confirm-amount-cell\s*\{[\s\S]*text-align:\s*right;/);
+});
+
+test('save confirmation modal markup is present with a review table and explicit actions', () => {
+  assert.match(entryHtml, /id="confirm-modal"/);
+  assert.match(entryHtml, /id="confirm-modal-title"/);
+  assert.match(entryHtml, /id="confirm-modal-summary"/);
+  assert.match(entryHtml, /id="confirm-modal-rows"/);
+  assert.match(entryHtml, /id="confirm-modal-cancel"/);
+  assert.match(entryHtml, /id="confirm-modal-submit"/);
+});
+
+test('save flow builds a confirmation modal before append and includes explicit confirm controls', () => {
+  assert.match(entryJs, /buildEntryPreviewRows/);
+  assert.match(entryJs, /function openConfirmModal\(/);
+  assert.match(entryJs, /confirmModalSummary\.textContent = /);
+  assert.match(entryJs, /confirmModalSubmitButton/);
+  assert.match(entryJs, /async function savePendingEntries\(/);
+  assert.match(entryJs, /state\.isSaving = true;/);
+  assert.match(entryJs, /closeConfirmModal\(\{ force: true \}\)/);
+  assert.match(entryJs, /form\.addEventListener\("submit", async \(event\) => {[\s\S]*openConfirmModal\(selection, collectEntryDrafts\(\)\)/);
+  assert.match(entryJs, /confirmModalSubmitButton\.addEventListener\("click", async \(\) => {[\s\S]*savePendingEntries\(selection\)/);
+});
+
+test('confirm modal close helper blocks dismissal while saving unless forced', () => {
+  assert.match(entryJs, /function closeConfirmModal\(\{ force = false \} = \{\}\) \{/);
+  assert.match(entryJs, /if \(state\.isSaving && !force\) \{/);
+});
+
 test('select options are rendered without an empty placeholder option', () => {
   assert.doesNotMatch(entryJs, /return \["", \.\.\.options\]/);
   assert.doesNotMatch(entryJs, /선택해 주세요/);
