@@ -6,9 +6,17 @@ const entryRows = document.querySelector("#entry-rows");
 const targetName = document.querySelector("#target-name");
 const spreadsheetLink = document.querySelector("#spreadsheet-link");
 const changeTargetLink = document.querySelector("#change-target-link");
+const confirmModal = document.querySelector("#confirm-modal");
+const confirmModalRows = document.querySelector("#confirm-modal-rows");
+const confirmModalSummary = document.querySelector("#confirm-modal-summary");
+const confirmModalCloseButton = document.querySelector("#confirm-modal-close");
+const confirmModalCancelButton = document.querySelector("#confirm-modal-cancel");
+const confirmModalSubmitButton = document.querySelector("#confirm-modal-submit");
 
 const state = {
   nextRowId: 1,
+  pendingEntries: null,
+  isSaving: false,
 };
 
 function setResult(type, message) {
@@ -26,9 +34,87 @@ function setLoadingState(active, label = "입력한 항목 전체 저장") {
   submitButton.disabled = active;
   submitButton.textContent = active ? label : "입력한 항목 전체 저장";
   addRowButton.disabled = active;
+  confirmModalSubmitButton.disabled = active;
+  confirmModalCancelButton.disabled = active;
+  confirmModalCloseButton.disabled = active;
 
   for (const button of entryRows.querySelectorAll(".remove-row-button")) {
     button.disabled = active || entryRows.children.length === 1;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function closeConfirmModal({ force = false } = {}) {
+  if (state.isSaving && !force) {
+    return;
+  }
+
+  state.pendingEntries = null;
+  confirmModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+}
+
+function renderConfirmRows(rows) {
+  confirmModalRows.innerHTML = rows
+    .map(
+      (row) => `
+        <tr>
+          <td>${escapeHtml(row.date)}</td>
+          <td>${escapeHtml(row.type)}</td>
+          <td>${escapeHtml(row.category)}</td>
+          <td>${escapeHtml(row.description)}</td>
+          <td>${escapeHtml(row.owner || '-')}</td>
+          <td>${escapeHtml(row.paymentMethod || '-')}</td>
+          <td class="confirm-amount-cell">${escapeHtml(row.amount)}</td>
+          <td>${escapeHtml(row.note)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
+function openConfirmModal(selection, entries) {
+  const previewRows = GatesEntryHelpers.buildEntryPreviewRows(entries);
+  state.pendingEntries = entries;
+  renderConfirmRows(previewRows);
+  confirmModalSummary.textContent = `${selection.spreadsheetName || selection.spreadsheetId} · ${previewRows.length}건`;
+  confirmModal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  confirmModalSubmitButton.focus();
+}
+
+async function savePendingEntries(selection) {
+  if (!state.pendingEntries) {
+    return;
+  }
+
+  state.isSaving = true;
+  setLoadingState(true, "Google Sheets에 저장 중...");
+
+  try {
+    const saveResult = await appendEntries(selection.spreadsheetId, state.pendingEntries);
+    state.isSaving = false;
+    closeConfirmModal({ force: true });
+    resetRows();
+    const actorLabel = saveResult.actor.name;
+    const actorSuffix = actorLabel ? ` 입력자: ${actorLabel}.` : "";
+    setResult(
+      "success",
+      `${saveResult.logsCount}건을 logs 시트에 저장했고 ${saveResult.monthlySheetNames.join(", ")} 시트에 반영했습니다.${actorSuffix}`,
+    );
+  } catch (error) {
+    setResult("error", error.message);
+  } finally {
+    state.isSaving = false;
+    setLoadingState(false);
   }
 }
 
@@ -427,6 +513,18 @@ addRowButton.addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", (event) => {
+  const isConfirmModalOpen = !confirmModal.classList.contains("hidden");
+
+  if (isConfirmModalOpen && event.key === "Escape") {
+    event.preventDefault();
+    closeConfirmModal();
+    return;
+  }
+
+  if (isConfirmModalOpen) {
+    return;
+  }
+
   if (isAddRowShortcut(event)) {
     event.preventDefault();
     const row = addEntryRow();
@@ -490,10 +588,18 @@ entryRows.addEventListener("blur", (event) => {
   }
 }, true);
 
+confirmModal.addEventListener("click", (event) => {
+  if (event.target.closest('[data-close-confirm-modal]')) {
+    closeConfirmModal();
+  }
+});
+
+confirmModalCloseButton.addEventListener("click", closeConfirmModal);
+confirmModalCancelButton.addEventListener("click", closeConfirmModal);
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   clearResult();
-  setLoadingState(true, "Google Sheets에 저장 중...");
 
   const selection = ensureSelection();
   if (!selection) {
@@ -501,19 +607,20 @@ form.addEventListener("submit", async (event) => {
   }
 
   try {
-    const saveResult = await appendEntries(selection.spreadsheetId, collectEntryDrafts());
-    resetRows();
-    const actorLabel = saveResult.actor.name;
-    const actorSuffix = actorLabel ? ` 입력자: ${actorLabel}.` : "";
-    setResult(
-      "success",
-      `${saveResult.logsCount}건을 logs 시트에 저장했고 ${saveResult.monthlySheetNames.join(", ")} 시트에 반영했습니다.${actorSuffix}`,
-    );
+    openConfirmModal(selection, collectEntryDrafts());
   } catch (error) {
     setResult("error", error.message);
-  } finally {
-    setLoadingState(false);
   }
+});
+
+confirmModalSubmitButton.addEventListener("click", async () => {
+  clearResult();
+  const selection = ensureSelection();
+  if (!selection) {
+    return;
+  }
+
+  await savePendingEntries(selection);
 });
 
 const selection = ensureSelection();

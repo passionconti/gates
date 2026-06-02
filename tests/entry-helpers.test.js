@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  buildEntryPreviewRows,
   buildLogsRowsPayload,
   buildMonthlySheetPayloads,
   createEmptyEntryDraft,
@@ -216,6 +217,34 @@ test('buildMonthlySheetPayloads groups rows by month and maps expense and income
     {
       sheetName: '5월',
       rows: [['26-05-03', '여행', '택시', 18000, '', '', '카드', '']],
+    },
+  ]);
+});
+
+test('buildEntryPreviewRows returns formatted confirmation rows for the save modal', () => {
+  const previewRows = buildEntryPreviewRows([
+    {
+      date: '2026-04-10',
+      type: '지출',
+      category: '외식',
+      description: '점심',
+      owner: '승렬',
+      paymentMethod: '카드',
+      amount: '12000',
+      note: '',
+    },
+  ]);
+
+  assert.deepEqual(previewRows, [
+    {
+      date: '26.04.10',
+      type: '지출',
+      category: '외식',
+      description: '점심',
+      owner: '승렬',
+      paymentMethod: '카드',
+      amount: '12,000',
+      note: '-',
     },
   ]);
 });
