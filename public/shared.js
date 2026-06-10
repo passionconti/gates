@@ -113,6 +113,34 @@
     return sanitizeAuthSession(readJson(storage, AUTH_STORAGE_KEY));
   }
 
+  function isAuthSessionExpired(session, options = {}) {
+    const sanitized = sanitizeAuthSession(session);
+
+    if (!sanitized?.expiresAt) {
+      return false;
+    }
+
+    const now = Number.isFinite(Number(options.now)) ? Number(options.now) : Date.now();
+    const bufferMs = Number.isFinite(Number(options.bufferMs)) ? Number(options.bufferMs) : 0;
+
+    return sanitized.expiresAt <= now + bufferMs;
+  }
+
+  function readActiveAuthSession(storage, options = {}) {
+    const session = readAuthSession(storage);
+
+    if (!session) {
+      return null;
+    }
+
+    if (isAuthSessionExpired(session, options)) {
+      clearAuthSession(storage);
+      return null;
+    }
+
+    return session;
+  }
+
   function clearAuthSession(storage) {
     removeItem(storage, AUTH_STORAGE_KEY);
   }
@@ -130,6 +158,8 @@
     clearSelection,
     persistAuthSession,
     readAuthSession,
+    readActiveAuthSession,
+    isAuthSessionExpired,
     clearAuthSession,
     buildEntryPageUrl,
   };
