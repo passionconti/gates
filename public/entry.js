@@ -13,10 +13,18 @@ const confirmModalCloseButton = document.querySelector("#confirm-modal-close");
 const confirmModalCancelButton = document.querySelector("#confirm-modal-cancel");
 const confirmModalSubmitButton = document.querySelector("#confirm-modal-submit");
 
+const GOOGLE_DISCOVERY_WAIT_MS = 100;
+const AUTH_REFRESH_BUFFER_MS = 60 * 1000;
+
 const state = {
   nextRowId: 1,
   pendingEntries: null,
   isSaving: false,
+  config: null,
+  tokenClient: null,
+  accessToken: null,
+  accessTokenRefreshPromise: null,
+  authReadyPromise: null,
 };
 
 function setResult(type, message) {
@@ -100,7 +108,8 @@ async function savePendingEntries(selection) {
   setLoadingState(true, "Google Sheets에 저장 중...");
 
   try {
-    const saveResult = await appendEntries(selection.spreadsheetId, state.pendingEntries);
+    const editableSelection = await ensureEditableSelection(selection);
+    const saveResult = await appendEntries(editableSelection.spreadsheetId, state.pendingEntries);
     state.isSaving = false;
     closeConfirmModal({ force: true });
     resetRows();
@@ -126,27 +135,174 @@ function getTodayDateText() {
   return `${year}-${month}-${date}`;
 }
 
-function getGoogleApiHeaders() {
-  const authSession = GatesShared.readAuthSession(window.sessionStorage);
+async function loadConfig() {
+  const data = await fetchJson("/api/config", {}, { retryOnAuthError: false });
 
-  if (!authSession?.accessToken) {
-    throw new Error("인증 정보가 만료되었습니다. 다시 대상 시트를 골라 주세요.");
+  if (!data.configured) {
+    throw new Error(`Google OAuth 설정이 아직 완료되지 않았습니다. 누락된 값: ${data.missingEnvVars.join(", ")}`);
   }
 
+  state.config = data;
+  return data;
+}
+
+async function waitForGoogleIdentityServices() {
+  while (!window.google?.accounts?.oauth2) {
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, GOOGLE_DISCOVERY_WAIT_MS);
+    });
+  }
+}
+
+function restoreAuthSession() {
+  const session = GatesShared.readActiveAuthSession(window.sessionStorage, {
+    bufferMs: AUTH_REFRESH_BUFFER_MS,
+  });
+
+  state.accessToken = session?.accessToken || null;
+}
+
+function persistRefreshedAuthSession(accessToken, expiresIn) {
+  const existingSession = GatesShared.readAuthSession(window.sessionStorage);
+  const expiresAt = Number.isFinite(Number(expiresIn)) ? Date.now() + Number(expiresIn) * 1000 : existingSession?.expiresAt || null;
+
+  GatesShared.persistAuthSession(window.sessionStorage, {
+    accessToken,
+    expiresAt,
+    name: existingSession?.name || "",
+    email: existingSession?.email || "",
+  });
+
+  state.accessToken = accessToken;
+}
+
+function initializeGoogleAuth() {
+  state.tokenClient = window.google.accounts.oauth2.initTokenClient({
+    client_id: state.config.googleClientId,
+    scope: state.config.scopes.join(" "),
+    callback: () => {},
+  });
+}
+
+function requestGoogleAccessToken({ prompt = "" } = {}) {
+  if (!state.tokenClient) {
+    throw new Error("Google 인증 클라이언트가 아직 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
+  }
+
+  return new Promise((resolve, reject) => {
+    state.tokenClient.callback = (response) => {
+      if (response.error) {
+        reject(new Error(response.error));
+        return;
+      }
+
+      persistRefreshedAuthSession(response.access_token, response.expires_in);
+      resolve(response.access_token);
+    };
+
+    state.tokenClient.requestAccessToken({ prompt });
+  });
+}
+
+async function refreshGoogleAccessToken({ allowPrompt = false } = {}) {
+  if (state.accessTokenRefreshPromise) {
+    return state.accessTokenRefreshPromise;
+  }
+
+  state.accessTokenRefreshPromise = (async () => {
+    try {
+      return await requestGoogleAccessToken({ prompt: "" });
+    } catch (error) {
+      if (!allowPrompt) {
+        throw error;
+      }
+
+      return requestGoogleAccessToken({ prompt: "consent" });
+    }
+  })();
+
+  try {
+    return await state.accessTokenRefreshPromise;
+  } finally {
+    state.accessTokenRefreshPromise = null;
+  }
+}
+
+async function ensureFreshGoogleAccessToken({ allowPrompt = false, forceRefresh = false } = {}) {
+  if (state.authReadyPromise) {
+    await state.authReadyPromise;
+  }
+
+  if (!forceRefresh) {
+    const session = GatesShared.readActiveAuthSession(window.sessionStorage, {
+      bufferMs: AUTH_REFRESH_BUFFER_MS,
+    });
+
+    if (session?.accessToken) {
+      state.accessToken = session.accessToken;
+      return session.accessToken;
+    }
+  }
+
+  return refreshGoogleAccessToken({ allowPrompt });
+}
+
+async function getGoogleApiHeaders(options = {}) {
+  const accessToken = await ensureFreshGoogleAccessToken(options);
+
   return {
-    Authorization: `Bearer ${authSession.accessToken}`,
+    Authorization: `Bearer ${accessToken}`,
   };
 }
 
-async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.error?.message || data.message || "요청에 실패했습니다.");
+function isAuthErrorResponse(response, data) {
+  if (response.status === 401) {
+    return true;
   }
 
-  return data;
+  if (response.status !== 403) {
+    return false;
+  }
+
+  const message = String(data?.error?.message || data?.message || "").toLowerCase();
+  const reason = String(data?.error?.errors?.[0]?.reason || "").toLowerCase();
+
+  return (
+    reason.includes("auth") ||
+    reason.includes("scope") ||
+    message.includes("authentication") ||
+    message.includes("credential") ||
+    message.includes("scope")
+  );
+}
+
+async function fetchJson(url, options = {}, { retryOnAuthError = true, allowPromptOnRetry = true } = {}) {
+  const response = await fetch(url, options);
+  const data = await response.json().catch(() => null);
+
+  if (response.ok) {
+    return data || {};
+  }
+
+  if (retryOnAuthError && isAuthErrorResponse(response, data)) {
+    const headers = {
+      ...(options.headers || {}),
+      ...(await getGoogleApiHeaders({ allowPrompt: allowPromptOnRetry, forceRefresh: true })),
+    };
+
+    return fetchJson(url, { ...options, headers }, { retryOnAuthError: false, allowPromptOnRetry });
+  }
+
+  throw new Error(data?.error?.message || data?.message || "요청에 실패했습니다.");
+}
+
+async function fetchSpreadsheetAccess(selection) {
+  return fetchJson(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(selection.spreadsheetId)}?fields=id,name,capabilities/canEdit,webViewLink&supportsAllDrives=true`,
+    {
+      headers: await getGoogleApiHeaders({ allowPrompt: true }),
+    },
+  );
 }
 
 async function appendToSheet(spreadsheetId, range, rows) {
@@ -155,7 +311,7 @@ async function appendToSheet(spreadsheetId, range, rows) {
     {
       method: "POST",
       headers: {
-        ...getGoogleApiHeaders(),
+        ...(await getGoogleApiHeaders({ allowPrompt: true })),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ values: rows }),
@@ -163,12 +319,30 @@ async function appendToSheet(spreadsheetId, range, rows) {
   );
 }
 
+async function ensureEditableSelection(selection) {
+  const spreadsheet = await fetchSpreadsheetAccess(selection);
+
+  if (!spreadsheet.capabilities?.canEdit) {
+    GatesShared.clearSelection(window.localStorage);
+    throw new Error("선택한 Spreadsheet의 편집 권한이 없어졌습니다. 대상 시트를 다시 골라 주세요.");
+  }
+
+  const nextSelection = GatesShared.persistSelection(window.localStorage, {
+    spreadsheetId: spreadsheet.id || selection.spreadsheetId,
+    spreadsheetName: spreadsheet.name || selection.spreadsheetName,
+    webViewLink: spreadsheet.webViewLink || selection.webViewLink,
+  });
+
+  populateSelection(nextSelection);
+  return nextSelection;
+}
+
 async function fetchActorProfile() {
   const authSession = GatesShared.readAuthSession(window.sessionStorage);
 
   try {
     const data = await fetchJson("https://www.googleapis.com/drive/v3/about?fields=user(displayName)", {
-      headers: getGoogleApiHeaders(),
+      headers: await getGoogleApiHeaders({ allowPrompt: true }),
     });
 
     return {
@@ -185,7 +359,7 @@ async function ensureLogsHeader(spreadsheetId) {
   const data = await fetchJson(
     `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent("logs!A1:K1")}`,
     {
-      headers: getGoogleApiHeaders(),
+      headers: await getGoogleApiHeaders({ allowPrompt: true }),
     },
   );
 
@@ -199,7 +373,7 @@ async function ensureLogsHeader(spreadsheetId) {
     {
       method: "PUT",
       headers: {
-        ...getGoogleApiHeaders(),
+        ...(await getGoogleApiHeaders({ allowPrompt: true })),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ values: [[...GatesEntryHelpers.getLogsHeaderRow(), ""]] }),
@@ -228,9 +402,8 @@ async function appendEntries(spreadsheetId, entries) {
 
 function ensureSelection() {
   const selection = GatesShared.readSelection(window.localStorage);
-  const authSession = GatesShared.readAuthSession(window.sessionStorage);
 
-  if (!selection || !authSession?.accessToken) {
+  if (!selection) {
     window.location.replace("/");
     return null;
   }
@@ -244,6 +417,9 @@ function populateSelection(selection) {
   if (selection.webViewLink) {
     spreadsheetLink.href = selection.webViewLink;
     spreadsheetLink.classList.remove("hidden");
+  } else {
+    spreadsheetLink.href = "#";
+    spreadsheetLink.classList.add("hidden");
   }
 
   changeTargetLink.href = "/";
@@ -623,8 +799,29 @@ confirmModalSubmitButton.addEventListener("click", async () => {
   await savePendingEntries(selection);
 });
 
-const selection = ensureSelection();
-if (selection) {
+async function initializeAuth() {
+  restoreAuthSession();
+  await loadConfig();
+  await waitForGoogleIdentityServices();
+  initializeGoogleAuth();
+}
+
+async function initializePage() {
+  const selection = ensureSelection();
+  if (!selection) {
+    return;
+  }
+
   populateSelection(selection);
   resetRows();
+
+  state.authReadyPromise = initializeAuth();
+
+  try {
+    await state.authReadyPromise;
+  } catch (error) {
+    setResult("error", error.message);
+  }
 }
+
+initializePage();

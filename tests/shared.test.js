@@ -9,7 +9,9 @@ const {
   buildEntryPageUrl,
   persistAuthSession,
   readAuthSession,
+  readActiveAuthSession,
   clearAuthSession,
+  isAuthSessionExpired,
 } = require('../public/shared.js');
 
 function createStorage() {
@@ -95,5 +97,25 @@ test('clearAuthSession removes saved access token data', () => {
   });
   clearAuthSession(storage);
 
+  assert.equal(readAuthSession(storage), null);
+});
+
+test('isAuthSessionExpired treats past expiry as expired and future expiry as active', () => {
+  assert.equal(isAuthSessionExpired({ accessToken: 'token', expiresAt: 9_000 }, { now: 10_000 }), true);
+  assert.equal(isAuthSessionExpired({ accessToken: 'token', expiresAt: 11_000 }, { now: 10_000 }), false);
+  assert.equal(isAuthSessionExpired({ accessToken: 'token', expiresAt: null }, { now: 10_000 }), false);
+});
+
+test('readActiveAuthSession clears expired auth data from storage', () => {
+  const storage = createStorage();
+
+  persistAuthSession(storage, {
+    accessToken: 'token-123',
+    expiresAt: 1_000,
+    name: 'Ryan',
+    email: 'ryan@example.com',
+  });
+
+  assert.equal(readActiveAuthSession(storage, { now: 2_000 }), null);
   assert.equal(readAuthSession(storage), null);
 });

@@ -17,6 +17,7 @@ test('confirmation modal styles support a scrollable review table and amount ali
 });
 
 test('save confirmation modal markup is present with a review table and explicit actions', () => {
+  assert.match(entryHtml, /https:\/\/accounts\.google\.com\/gsi\/client/);
   assert.match(entryHtml, /id="confirm-modal"/);
   assert.match(entryHtml, /id="confirm-modal-title"/);
   assert.match(entryHtml, /id="confirm-modal-summary"/);
@@ -25,7 +26,20 @@ test('save confirmation modal markup is present with a review table and explicit
   assert.match(entryHtml, /id="confirm-modal-submit"/);
 });
 
-test('save flow builds a confirmation modal before append and includes explicit confirm controls', () => {
+test('save flow revalidates auth before append and retries through a token refresh path', () => {
+  assert.match(entryJs, /async function ensureFreshGoogleAccessToken\(/);
+  assert.match(entryJs, /async function refreshGoogleAccessToken\(/);
+  assert.match(entryJs, /await ensureEditableSelection\(selection\)/);
+  assert.match(entryJs, /isAuthErrorResponse/);
+  assert.match(entryJs, /retryOnAuthError/);
+});
+
+test('confirm modal close helper blocks dismissal while saving unless forced', () => {
+  assert.match(entryJs, /function closeConfirmModal\(\{ force = false \} = \{\}\) \{/);
+  assert.match(entryJs, /if \(state\.isSaving && !force\) \{/);
+});
+
+test('save flow still builds a confirmation modal before append and includes explicit confirm controls', () => {
   assert.match(entryJs, /buildEntryPreviewRows/);
   assert.match(entryJs, /function openConfirmModal\(/);
   assert.match(entryJs, /confirmModalSummary\.textContent = /);
@@ -35,11 +49,6 @@ test('save flow builds a confirmation modal before append and includes explicit 
   assert.match(entryJs, /closeConfirmModal\(\{ force: true \}\)/);
   assert.match(entryJs, /form\.addEventListener\("submit", async \(event\) => {[\s\S]*openConfirmModal\(selection, collectEntryDrafts\(\)\)/);
   assert.match(entryJs, /confirmModalSubmitButton\.addEventListener\("click", async \(\) => {[\s\S]*savePendingEntries\(selection\)/);
-});
-
-test('confirm modal close helper blocks dismissal while saving unless forced', () => {
-  assert.match(entryJs, /function closeConfirmModal\(\{ force = false \} = \{\}\) \{/);
-  assert.match(entryJs, /if \(state\.isSaving && !force\) \{/);
 });
 
 test('select options are rendered without an empty placeholder option', () => {
