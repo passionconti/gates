@@ -97,6 +97,15 @@ function announceCalculatorMessage(message) {
   });
 }
 
+function getCalculatorContextLabel(row) {
+  const descriptionValue = row?.querySelector('[name="description"]')?.value?.trim();
+  if (descriptionValue) {
+    return descriptionValue;
+  }
+
+  return `입력항목 ${row?.dataset.rowIndex || '?'}`;
+}
+
 function getCalculatorFocusableElements() {
   return Array.from(
     calculatorWindow?.querySelectorAll(
@@ -147,7 +156,7 @@ function openCalculator(row) {
   row.classList.add('calculator-active');
   calculatorDisplay.value = amountValue || '0';
   calculatorStatus.textContent = '';
-  calculatorRowContext.textContent = `입력항목 ${row.dataset.rowIndex || '?'}`;
+  calculatorRowContext.textContent = getCalculatorContextLabel(row);
   calculatorWindow.classList.remove('hidden');
   calculatorWindowBackdrop.classList.remove('hidden');
   document.body.classList.add('modal-open');
@@ -687,7 +696,7 @@ function updateRowButtons() {
 
   const activeRow = getActiveCalculatorRow();
   if (activeRow) {
-    calculatorRowContext.textContent = `입력항목 ${activeRow.dataset.rowIndex || '?'}`;
+    calculatorRowContext.textContent = getCalculatorContextLabel(activeRow);
   }
 }
 
@@ -967,6 +976,10 @@ entryRows.addEventListener("input", (event) => {
 
   if (event.target.matches('[name="amount"]')) {
     syncAmountField(row, { formatDisplay: true });
+  }
+
+  if (event.target.matches('[name="description"]') && state.activeCalculatorRowId === row.dataset.rowId) {
+    calculatorRowContext.textContent = getCalculatorContextLabel(row);
   }
 });
 
