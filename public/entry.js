@@ -12,6 +12,14 @@ const confirmModalSummary = document.querySelector("#confirm-modal-summary");
 const confirmModalCloseButton = document.querySelector("#confirm-modal-close");
 const confirmModalCancelButton = document.querySelector("#confirm-modal-cancel");
 const confirmModalSubmitButton = document.querySelector("#confirm-modal-submit");
+const entryEditorSection = document.querySelector("#entry-editor-section");
+const calculatorWindow = document.querySelector("#calculator-window");
+const calculatorWindowBackdrop = document.querySelector("#calculator-window-backdrop");
+const calculatorDisplay = document.querySelector("#calculator-display");
+const calculatorStatus = document.querySelector("#calculator-status");
+const calculatorRowContext = document.querySelector("#calculator-row-context");
+const calculatorApplyButton = document.querySelector("#calculator-apply-button");
+const calculatorCloseButton = document.querySelector("#calculator-close-button");
 
 const GOOGLE_DISCOVERY_WAIT_MS = 100;
 const AUTH_REFRESH_BUFFER_MS = 60 * 1000;
@@ -25,6 +33,7 @@ const state = {
   accessToken: null,
   accessTokenRefreshPromise: null,
   authReadyPromise: null,
+  activeCalculatorRowId: null,
 };
 
 function setResult(type, message) {
@@ -58,6 +67,125 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function getCalculatorElements(row) {
+  return {
+    toggleButton: row?.querySelector('.calculator-toggle-button') || null,
+    window: calculatorWindow,
+    display: calculatorDisplay,
+    status: calculatorStatus,
+  };
+}
+
+function getActiveCalculatorRow() {
+  return state.activeCalculatorRowId
+    ? entryRows.querySelector(`.entry-row[data-row-id="${state.activeCalculatorRowId}"]`)
+    : null;
+}
+
+function closeCalculator() {
+  const activeRow = getActiveCalculatorRow();
+
+  calculatorWindow?.classList.add('hidden');
+  calculatorWindowBackdrop?.classList.add('hidden');
+  calculatorDisplay.value = '';
+  calculatorStatus.textContent = '';
+  calculatorRowContext.textContent = '입력 항목';
+
+  activeRow?.querySelector('.calculator-toggle-button')?.setAttribute('aria-expanded', 'false');
+  activeRow?.classList.remove('calculator-active');
+  state.activeCalculatorRowId = null;
+}
+
+function closeAllCalculators({ exceptRow = null } = {}) {
+  const activeRow = getActiveCalculatorRow();
+  if (activeRow && exceptRow && activeRow === exceptRow) {
+    return;
+  }
+
+  closeCalculator();
+}
+
+function openCalculator(row) {
+  closeAllCalculators({ exceptRow: row });
+  const { toggleButton } = getCalculatorElements(row);
+  const amountValue = row.querySelector('[name="amount"]')?.value || '';
+
+  state.activeCalculatorRowId = row.dataset.rowId;
+  row.classList.add('calculator-active');
+  calculatorDisplay.value = amountValue;
+  calculatorStatus.textContent = '';
+  calculatorRowContext.textContent = `입력 항목 ${row.dataset.rowIndex || '?'}`;
+  calculatorWindow.classList.remove('hidden');
+  calculatorWindowBackdrop.classList.remove('hidden');
+  toggleButton?.setAttribute('aria-expanded', 'true');
+  calculatorDisplay.focus();
+  calculatorDisplay.setSelectionRange?.(calculatorDisplay.value.length, calculatorDisplay.value.length);
+}
+
+function toggleCalculator(row) {
+  if (state.activeCalculatorRowId === row.dataset.rowId && !calculatorWindow.classList.contains('hidden')) {
+    closeCalculator();
+    return;
+  }
+
+  openCalculator(row);
+}
+
+function setCalculatorStatus(message) {
+  calculatorStatus.textContent = message;
+}
+
+function applyCalculatorResultToAmount(row = getActiveCalculatorRow()) {
+  if (!row) {
+    return;
+  }
+
+  const amountInput = row.querySelector('[name="amount"]');
+  const computedAmount = GatesEntryHelpers.evaluateCalculatorExpression(calculatorDisplay.value);
+  const normalizedAmount = String(computedAmount);
+
+  calculatorDisplay.value = GatesEntryHelpers.formatAmountDisplayValue(normalizedAmount);
+  amountInput.value = normalizedAmount;
+  syncAmountField(row, { formatDisplay: true });
+  setCalculatorStatus(`${GatesEntryHelpers.formatAmountDisplayValue(normalizedAmount)}원 적용됨`);
+  closeCalculator();
+  amountInput.focus();
+}
+
+function appendCalculatorInput(text) {
+  calculatorDisplay.value += text;
+}
+
+function backspaceCalculatorInput() {
+  calculatorDisplay.value = calculatorDisplay.value.slice(0, -1);
+}
+
+function clearCalculatorInput() {
+  calculatorDisplay.value = '';
+  setCalculatorStatus('');
+}
+
+function handleCalculatorAction(action) {
+  if (action === 'clear') {
+    clearCalculatorInput();
+    return;
+  }
+
+  if (action === 'backspace') {
+    backspaceCalculatorInput();
+    return;
+  }
+
+  if (action === 'apply') {
+    applyCalculatorResultToAmount();
+    return;
+  }
+
+  if (action === 'close') {
+    closeCalculator();
+  }
 }
 
 function closeConfirmModal({ force = false } = {}) {
@@ -484,7 +612,19 @@ function createRowElement(draft, rowId) {
       </select>
     </td>
     <td data-label="금액">
-      <input type="text" name="amount" value="${GatesEntryHelpers.formatAmountDisplayValue(draft.amount)}" inputmode="numeric" autocomplete="off" placeholder="12,000" required />
+      <div class="amount-input-wrap">
+        <input type="text" name="amount" value="${GatesEntryHelpers.formatAmountDisplayValue(draft.amount)}" inputmode="numeric" autocomplete="off" placeholder="12,000" required />
+        <button type="button" class="secondary calculator-toggle-button icon-button" aria-label="금액 계산기 열기" aria-expanded="false">
+          <svg viewBox="0 0 24 24" class="calculator-trigger-icon" aria-hidden="true" focusable="false">
+            <rect x="5" y="3.5" width="14" height="17" rx="3.5"></rect>
+            <path d="M8.5 7.5h7"></path>
+            <path d="M8 11.5h2.5"></path>
+            <path d="M13.5 11.5H16"></path>
+            <path d="M8 15.5h2.5"></path>
+            <path d="M13.5 15.5H16"></path>
+          </svg>
+        </button>
+      </div>
     </td>
     <td data-label="비고">
       <input type="text" name="note" value="${draft.note}" placeholder="메모" />
@@ -510,6 +650,11 @@ function updateRowButtons() {
       removeButton.title = `${index + 1}번째 항목 삭제`;
     }
   });
+
+  const activeRow = getActiveCalculatorRow();
+  if (activeRow) {
+    calculatorRowContext.textContent = `입력 항목 ${activeRow.dataset.rowIndex || '?'}`;
+  }
 }
 
 function buildEntryRowElement(draft = GatesEntryHelpers.createEmptyEntryDraft(getTodayDateText())) {
@@ -690,6 +835,16 @@ addRowButton.addEventListener("click", () => {
 
 document.addEventListener("keydown", (event) => {
   const isConfirmModalOpen = !confirmModal.classList.contains("hidden");
+  const activeCalculatorRow = state.activeCalculatorRowId
+    ? entryRows.querySelector(`.entry-row[data-row-id="${state.activeCalculatorRowId}"]`)
+    : null;
+
+  if (activeCalculatorRow && event.key === 'Escape') {
+    event.preventDefault();
+    closeCalculator(activeCalculatorRow);
+    activeCalculatorRow.querySelector('.calculator-toggle-button')?.focus();
+    return;
+  }
 
   if (isConfirmModalOpen && event.key === "Escape") {
     event.preventDefault();
@@ -697,7 +852,7 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (isConfirmModalOpen) {
+  if (isConfirmModalOpen || activeCalculatorRow) {
     return;
   }
 
@@ -715,12 +870,25 @@ document.addEventListener("keydown", (event) => {
 }, true);
 
 entryRows.addEventListener("click", (event) => {
-  const button = event.target.closest(".remove-row-button");
-  if (!button) {
+  const row = event.target.closest('.entry-row');
+  if (!row) {
+    closeAllCalculators();
     return;
   }
 
-  removeEntryRow(button);
+  const removeButton = event.target.closest(".remove-row-button");
+  if (removeButton) {
+    if (state.activeCalculatorRowId === row.dataset.rowId) {
+      closeCalculator();
+    }
+    removeEntryRow(removeButton);
+    return;
+  }
+
+  const calculatorToggleButton = event.target.closest('.calculator-toggle-button');
+  if (calculatorToggleButton) {
+    toggleCalculator(row);
+  }
 });
 
 entryRows.addEventListener("input", (event) => {
@@ -763,6 +931,72 @@ entryRows.addEventListener("blur", (event) => {
     syncAmountField(event.target.closest('.entry-row'), { formatDisplay: true });
   }
 }, true);
+
+calculatorWindow.addEventListener("click", (event) => {
+  const calculatorKeyButton = event.target.closest('[data-calculator-key]');
+  if (calculatorKeyButton) {
+    const key = calculatorKeyButton.dataset.calculatorKey;
+
+    if (key === '=') {
+      try {
+        const computedAmount = GatesEntryHelpers.evaluateCalculatorExpression(calculatorDisplay.value);
+        calculatorDisplay.value = GatesEntryHelpers.formatAmountDisplayValue(String(computedAmount));
+        setCalculatorStatus(`${GatesEntryHelpers.formatAmountDisplayValue(String(computedAmount))}원 계산됨`);
+      } catch (error) {
+        setCalculatorStatus(error.message);
+      }
+      return;
+    }
+
+    appendCalculatorInput(key);
+    return;
+  }
+
+  const calculatorActionButton = event.target.closest('[data-calculator-action]');
+  if (calculatorActionButton) {
+    try {
+      handleCalculatorAction(calculatorActionButton.dataset.calculatorAction);
+    } catch (error) {
+      setCalculatorStatus(error.message);
+    }
+  }
+});
+
+calculatorDisplay.addEventListener('input', () => {
+  setCalculatorStatus('');
+});
+
+calculatorDisplay.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    try {
+      applyCalculatorResultToAmount();
+    } catch (error) {
+      setCalculatorStatus(error.message);
+    }
+  }
+});
+
+calculatorApplyButton.addEventListener('click', () => {
+  try {
+    applyCalculatorResultToAmount();
+  } catch (error) {
+    setCalculatorStatus(error.message);
+  }
+});
+
+calculatorCloseButton.addEventListener('click', closeCalculator);
+calculatorWindowBackdrop.addEventListener('click', closeCalculator);
+
+document.addEventListener('click', (event) => {
+  if (event.target.closest('.calculator-toggle-button') || event.target.closest('#calculator-window')) {
+    return;
+  }
+
+  if (state.activeCalculatorRowId) {
+    closeCalculator();
+  }
+});
 
 confirmModal.addEventListener("click", (event) => {
   if (event.target.closest('[data-close-confirm-modal]')) {

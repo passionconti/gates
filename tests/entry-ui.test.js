@@ -18,6 +18,7 @@ test('confirmation modal styles support a scrollable review table and amount ali
 
 test('save confirmation modal markup is present with a review table and explicit actions', () => {
   assert.match(entryHtml, /https:\/\/accounts\.google\.com\/gsi\/client/);
+  assert.match(entryHtml, /id="entry-editor-section"/);
   assert.match(entryHtml, /id="confirm-modal"/);
   assert.match(entryHtml, /id="confirm-modal-title"/);
   assert.match(entryHtml, /id="confirm-modal-summary"/);
@@ -88,4 +89,38 @@ test('amount field uses text input formatting helpers instead of native number s
   assert.match(entryJs, /formatAmountDisplayValue/);
   assert.match(entryJs, /normalizeAmountInputValue/);
   assert.doesNotMatch(entryJs, /<input type="number" name="amount"/);
+});
+
+test('amount row and page markup include a calculator trigger plus a separate floating calculator window', () => {
+  assert.match(entryJs, /calculator-toggle-button/);
+  assert.match(entryJs, /class="calculator-trigger-icon"/);
+  assert.match(entryHtml, /id="calculator-window"/);
+  assert.match(entryHtml, /id="calculator-row-context"/);
+  assert.match(entryHtml, /id="calculator-display"/);
+  assert.match(entryHtml, /id="calculator-apply-button"/);
+  assert.match(entryHtml, /data-calculator-key="="/);
+  assert.match(entryJs, /function applyCalculatorResultToAmount\(/);
+  assert.match(entryJs, /calculatorWindow\.classList\.remove\('hidden'\)/);
+});
+
+test('calculator window styles render as a polished viewport-level floating popup instead of an in-table popover', () => {
+  assert.match(stylesCss, /\.amount-input-wrap\s*\{/);
+  assert.match(stylesCss, /\.calculator-trigger-icon\s*\{/);
+  assert.match(stylesCss, /\.calculator-window\s*\{[\s\S]*position:\s*fixed;[\s\S]*transform:\s*translate\(-50%, -50%\);[\s\S]*box-shadow:/);
+  assert.match(stylesCss, /\.calculator-row-context\s*\{/);
+  assert.match(stylesCss, /\.entry-table \.entry-row\.calculator-active\s*\{/);
+  assert.match(stylesCss, /#calculator-display\s*\{[\s\S]*text-align:\s*right;/);
+  assert.match(stylesCss, /@media \(max-width: 720px\)[\s\S]*\.calculator-window\s*\{[\s\S]*width:\s*calc\(100vw - 24px\);/);
+});
+
+test('calculator window logic opens independently from the table layout, highlights the active row, and tracks its context', () => {
+  assert.match(entryJs, /const calculatorWindow = document\.querySelector\("#calculator-window"\);/);
+  assert.match(entryJs, /const calculatorDisplay = document\.querySelector\("#calculator-display"\);/);
+  assert.match(entryJs, /const calculatorRowContext = document\.querySelector\("#calculator-row-context"\);/);
+  assert.match(entryJs, /row\.classList\.add\('calculator-active'\)/);
+  assert.match(entryJs, /activeRow\?\.classList\.remove\('calculator-active'\)/);
+  assert.match(entryJs, /calculatorRowContext\.textContent = `입력 항목 \$\{row\.dataset\.rowIndex \|\| '\?'\}`/);
+  assert.match(entryJs, /state\.activeCalculatorRowId = row\.dataset\.rowId;/);
+  assert.match(entryJs, /calculatorWindow\.addEventListener\("click", \(event\) => \{/);
+  assert.match(entryJs, /document\.addEventListener\('click', \(event\) => \{/);
 });
