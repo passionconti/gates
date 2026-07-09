@@ -95,7 +95,9 @@ test('amount row and page markup include a calculator trigger plus a separate fl
   assert.match(entryJs, /calculator-toggle-button/);
   assert.match(entryJs, /class="calculator-trigger-icon"/);
   assert.match(entryHtml, /id="calculator-window"/);
+  assert.match(entryHtml, /aria-modal="true"/);
   assert.match(entryHtml, /id="calculator-row-context"/);
+  assert.match(entryHtml, /id="calculator-announcements"/);
   assert.match(entryHtml, /id="calculator-display"/);
   assert.match(entryHtml, /id="calculator-apply-button"/);
   assert.match(entryHtml, /data-calculator-key="="/);
@@ -117,9 +119,15 @@ test('calculator window logic opens independently from the table layout, highlig
   assert.match(entryJs, /const calculatorWindow = document\.querySelector\("#calculator-window"\);/);
   assert.match(entryJs, /const calculatorDisplay = document\.querySelector\("#calculator-display"\);/);
   assert.match(entryJs, /const calculatorRowContext = document\.querySelector\("#calculator-row-context"\);/);
+  assert.match(entryJs, /const calculatorAnnouncements = document\.querySelector\("#calculator-announcements"\);/);
+  assert.match(entryJs, /function announceCalculatorMessage\(/);
+  assert.match(entryJs, /function getCalculatorFocusableElements\(/);
   assert.match(entryJs, /row\.classList\.add\('calculator-active'\)/);
   assert.match(entryJs, /activeRow\?\.classList\.remove\('calculator-active'\)/);
   assert.match(entryJs, /calculatorRowContext\.textContent = `입력 항목 \$\{row\.dataset\.rowIndex \|\| '\?'\}`/);
+  assert.match(entryJs, /announceCalculatorMessage\(`\$\{formattedAmount\}원 계산값이 금액 필드에 적용되었습니다\.`\)/);
+  assert.match(entryJs, /closeCalculator\(\{ restoreFocus: false, clearStatus: false \}\)/);
+  assert.match(entryJs, /if \(activeCalculatorRow && event\.key === 'Tab'\)/);
   assert.match(entryJs, /state\.activeCalculatorRowId = row\.dataset\.rowId;/);
   assert.match(entryJs, /calculatorWindow\.addEventListener\("click", \(event\) => \{/);
   assert.match(entryJs, /document\.addEventListener\('click', \(event\) => \{/);

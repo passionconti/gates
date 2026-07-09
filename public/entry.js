@@ -18,6 +18,7 @@ const calculatorWindowBackdrop = document.querySelector("#calculator-window-back
 const calculatorDisplay = document.querySelector("#calculator-display");
 const calculatorStatus = document.querySelector("#calculator-status");
 const calculatorRowContext = document.querySelector("#calculator-row-context");
+const calculatorAnnouncements = document.querySelector("#calculator-announcements");
 const calculatorApplyButton = document.querySelector("#calculator-apply-button");
 const calculatorCloseButton = document.querySelector("#calculator-close-button");
 
@@ -34,6 +35,7 @@ const state = {
   accessTokenRefreshPromise: null,
   authReadyPromise: null,
   activeCalculatorRowId: null,
+  calculatorReturnFocusElement: null,
 };
 
 function setResult(type, message) {
@@ -84,18 +86,46 @@ function getActiveCalculatorRow() {
     : null;
 }
 
-function closeCalculator() {
+function announceCalculatorMessage(message) {
+  if (!calculatorAnnouncements) {
+    return;
+  }
+
+  calculatorAnnouncements.textContent = '';
+  window.requestAnimationFrame(() => {
+    calculatorAnnouncements.textContent = message;
+  });
+}
+
+function getCalculatorFocusableElements() {
+  return Array.from(
+    calculatorWindow?.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+    ) || [],
+  );
+}
+
+function closeCalculator({ restoreFocus = true, clearStatus = true } = {}) {
   const activeRow = getActiveCalculatorRow();
+  const returnFocusElement = state.calculatorReturnFocusElement;
 
   calculatorWindow?.classList.add('hidden');
   calculatorWindowBackdrop?.classList.add('hidden');
+  document.body.classList.remove('modal-open');
   calculatorDisplay.value = '';
-  calculatorStatus.textContent = '';
+  if (clearStatus) {
+    calculatorStatus.textContent = '';
+  }
   calculatorRowContext.textContent = '입력 항목';
 
   activeRow?.querySelector('.calculator-toggle-button')?.setAttribute('aria-expanded', 'false');
   activeRow?.classList.remove('calculator-active');
   state.activeCalculatorRowId = null;
+  state.calculatorReturnFocusElement = null;
+
+  if (restoreFocus) {
+    returnFocusElement?.focus?.();
+  }
 }
 
 function closeAllCalculators({ exceptRow = null } = {}) {
@@ -113,12 +143,14 @@ function openCalculator(row) {
   const amountValue = row.querySelector('[name="amount"]')?.value || '';
 
   state.activeCalculatorRowId = row.dataset.rowId;
+  state.calculatorReturnFocusElement = toggleButton;
   row.classList.add('calculator-active');
   calculatorDisplay.value = amountValue;
   calculatorStatus.textContent = '';
   calculatorRowContext.textContent = `입력 항목 ${row.dataset.rowIndex || '?'}`;
   calculatorWindow.classList.remove('hidden');
   calculatorWindowBackdrop.classList.remove('hidden');
+  document.body.classList.add('modal-open');
   toggleButton?.setAttribute('aria-expanded', 'true');
   calculatorDisplay.focus();
   calculatorDisplay.setSelectionRange?.(calculatorDisplay.value.length, calculatorDisplay.value.length);
@@ -145,12 +177,14 @@ function applyCalculatorResultToAmount(row = getActiveCalculatorRow()) {
   const amountInput = row.querySelector('[name="amount"]');
   const computedAmount = GatesEntryHelpers.evaluateCalculatorExpression(calculatorDisplay.value);
   const normalizedAmount = String(computedAmount);
+  const formattedAmount = GatesEntryHelpers.formatAmountDisplayValue(normalizedAmount);
 
-  calculatorDisplay.value = GatesEntryHelpers.formatAmountDisplayValue(normalizedAmount);
+  calculatorDisplay.value = formattedAmount;
   amountInput.value = normalizedAmount;
   syncAmountField(row, { formatDisplay: true });
-  setCalculatorStatus(`${GatesEntryHelpers.formatAmountDisplayValue(normalizedAmount)}원 적용됨`);
-  closeCalculator();
+  setCalculatorStatus(`${formattedAmount}원 적용됨`);
+  announceCalculatorMessage(`${formattedAmount}원 계산값이 금액 필드에 적용되었습니다.`);
+  closeCalculator({ restoreFocus: false, clearStatus: false });
   amountInput.focus();
 }
 
@@ -841,8 +875,25 @@ document.addEventListener("keydown", (event) => {
 
   if (activeCalculatorRow && event.key === 'Escape') {
     event.preventDefault();
-    closeCalculator(activeCalculatorRow);
-    activeCalculatorRow.querySelector('.calculator-toggle-button')?.focus();
+    closeCalculator();
+    return;
+  }
+
+  if (activeCalculatorRow && event.key === 'Tab') {
+    const focusableElements = getCalculatorFocusableElements();
+    if (focusableElements.length > 0) {
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements.at(-1);
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
     return;
   }
 
