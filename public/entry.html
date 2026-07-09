@@ -39,7 +39,7 @@
         </section>
 
         <form id="entry-form" class="form">
-          <section class="section">
+          <section id="entry-editor-section" class="section">
             <div class="section-head">
               <div>
                 <h2>가계부 항목 입력</h2>
@@ -122,6 +122,57 @@
           </div>
         </div>
 
+        <div id="calculator-window-backdrop" class="calculator-window-backdrop hidden"></div>
+        <div id="calculator-window" class="calculator-window hidden" role="dialog" aria-modal="true" aria-labelledby="calculator-window-title">
+          <div class="calculator-window-head">
+            <div class="calculator-window-heading-group">
+              <span class="calculator-window-badge" aria-hidden="true">
+                <svg viewBox="0 0 24 24" class="calculator-trigger-icon" focusable="false">
+                  <rect x="5" y="3.5" width="14" height="17" rx="3.5"></rect>
+                  <path d="M8.5 7.5h7"></path>
+                  <path d="M8 11.5h2.5"></path>
+                  <path d="M13.5 11.5H16"></path>
+                  <path d="M8 15.5h2.5"></path>
+                  <path d="M13.5 15.5H16"></path>
+                </svg>
+              </span>
+              <div>
+                <strong id="calculator-window-title">빠른 금액 계산</strong>
+                <div id="calculator-row-context" class="calculator-row-context">입력항목</div>
+              </div>
+            </div>
+            <button type="button" id="calculator-close-button" class="secondary icon-button" aria-label="계산기 닫기">
+              <span aria-hidden="true">✕</span>
+            </button>
+          </div>
+          <input id="calculator-display" type="text" inputmode="numeric" autocomplete="off" placeholder="12,000 + 3,500" />
+          <div id="calculator-status" class="muted compact calculator-status" aria-live="polite"></div>
+          <div class="calculator-grid">
+            <button type="button" class="secondary" data-calculator-action="clear">AC</button>
+            <button type="button" class="secondary" data-calculator-action="backspace">⌫</button>
+            <button type="button" class="secondary" data-calculator-key="(">(</button>
+            <button type="button" class="secondary" data-calculator-key=")">)</button>
+            <button type="button" class="secondary" data-calculator-key="7">7</button>
+            <button type="button" class="secondary" data-calculator-key="8">8</button>
+            <button type="button" class="secondary" data-calculator-key="9">9</button>
+            <button type="button" class="secondary" data-calculator-key="/">÷</button>
+            <button type="button" class="secondary" data-calculator-key="4">4</button>
+            <button type="button" class="secondary" data-calculator-key="5">5</button>
+            <button type="button" class="secondary" data-calculator-key="6">6</button>
+            <button type="button" class="secondary" data-calculator-key="*">×</button>
+            <button type="button" class="secondary" data-calculator-key="1">1</button>
+            <button type="button" class="secondary" data-calculator-key="2">2</button>
+            <button type="button" class="secondary" data-calculator-key="3">3</button>
+            <button type="button" class="secondary" data-calculator-key="-">-</button>
+            <button type="button" class="secondary" data-calculator-key="0">0</button>
+            <button type="button" class="secondary" data-calculator-key="00">00</button>
+            <button type="button" class="secondary" data-calculator-key="=">=</button>
+            <button type="button" class="secondary" data-calculator-key="+">+</button>
+          </div>
+          <button type="button" id="calculator-apply-button">계산값 금액에 적용</button>
+        </div>
+
+        <div id="calculator-announcements" class="sr-only" aria-live="polite" aria-atomic="true"></div>
         <div id="result" class="result hidden"></div>
       </section>
     </main>

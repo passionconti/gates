@@ -146,6 +146,36 @@
     return Number(normalized).toLocaleString('ko-KR');
   }
 
+  function evaluateCalculatorExpression(expressionText) {
+    const normalized = toTrimmedString(expressionText).replaceAll(',', '').replace(/\s+/g, '');
+
+    if (!normalized) {
+      throw new Error('계산식을 입력해 주세요.');
+    }
+
+    if (!/^[\d()+\-*/.]+$/.test(normalized) || /\*\*|\/\/|\.\./.test(normalized)) {
+      throw new Error('계산식에 숫자와 +, -, ×, ÷, 괄호만 사용할 수 있어요.');
+    }
+
+    let result;
+    try {
+      result = Function(`"use strict"; return (${normalized});`)();
+    } catch (_error) {
+      throw new Error('계산식을 다시 확인해 주세요.');
+    }
+
+    if (!Number.isFinite(result)) {
+      throw new Error('계산 결과를 확인해 주세요.');
+    }
+
+    const rounded = Math.round(result);
+    if (rounded < 0) {
+      throw new Error('계산 결과는 0원 이상이어야 해요.');
+    }
+
+    return rounded;
+  }
+
   function normalizeDesktopDateValue(dateText) {
     const normalized = toTrimmedString(dateText).replaceAll(' ', '');
 
@@ -348,6 +378,7 @@
     formatDesktopDateValue,
     normalizeAmountInputValue,
     formatAmountDisplayValue,
+    evaluateCalculatorExpression,
     normalizeDesktopDateValue,
     getCategoryOptionsForType,
     buildLogsRowsPayload,

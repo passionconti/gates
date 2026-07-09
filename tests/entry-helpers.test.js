@@ -61,6 +61,22 @@ test('formatAmountDisplayValue adds thousand separators for amount inputs', () =
   assert.equal(formatAmountDisplayValue(''), '');
 });
 
+test('evaluateCalculatorExpression computes safe integer arithmetic expressions for the mini calculator', () => {
+  const { evaluateCalculatorExpression } = require('../public/entry-helpers.js');
+
+  assert.equal(evaluateCalculatorExpression('12,000 + 3,500 * 2'), 19000);
+  assert.equal(evaluateCalculatorExpression('(5000+2500)/5'), 1500);
+});
+
+test('evaluateCalculatorExpression rejects invalid or unsafe calculator input', () => {
+  const { evaluateCalculatorExpression } = require('../public/entry-helpers.js');
+
+  assert.throws(() => evaluateCalculatorExpression(''), /계산식/);
+  assert.throws(() => evaluateCalculatorExpression('2**10'), /계산식/);
+  assert.throws(() => evaluateCalculatorExpression('alert(1)'), /계산식/);
+  assert.throws(() => evaluateCalculatorExpression('100/0'), /계산 결과/);
+});
+
 test('getCategoryOptionsForType returns the allowed dropdown options for each type', () => {
   assert.deepEqual(getCategoryOptionsForType('지출'), [
     '헌금',
