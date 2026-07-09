@@ -116,7 +116,7 @@ function closeCalculator({ restoreFocus = true, clearStatus = true } = {}) {
   if (clearStatus) {
     calculatorStatus.textContent = '';
   }
-  calculatorRowContext.textContent = '입력 항목';
+  calculatorRowContext.textContent = '입력항목';
 
   activeRow?.querySelector('.calculator-toggle-button')?.setAttribute('aria-expanded', 'false');
   activeRow?.classList.remove('calculator-active');
@@ -145,9 +145,9 @@ function openCalculator(row) {
   state.activeCalculatorRowId = row.dataset.rowId;
   state.calculatorReturnFocusElement = toggleButton;
   row.classList.add('calculator-active');
-  calculatorDisplay.value = amountValue;
+  calculatorDisplay.value = amountValue || '0';
   calculatorStatus.textContent = '';
-  calculatorRowContext.textContent = `입력 항목 ${row.dataset.rowIndex || '?'}`;
+  calculatorRowContext.textContent = `입력항목 ${row.dataset.rowIndex || '?'}`;
   calculatorWindow.classList.remove('hidden');
   calculatorWindowBackdrop.classList.remove('hidden');
   document.body.classList.add('modal-open');
@@ -687,7 +687,7 @@ function updateRowButtons() {
 
   const activeRow = getActiveCalculatorRow();
   if (activeRow) {
-    calculatorRowContext.textContent = `입력 항목 ${activeRow.dataset.rowIndex || '?'}`;
+    calculatorRowContext.textContent = `입력항목 ${activeRow.dataset.rowIndex || '?'}`;
   }
 }
 
@@ -765,6 +765,10 @@ function isAddRowShortcut(event) {
 
 function isDuplicatePreviousRowShortcut(event) {
   return isShortcutEvent(event, 'd');
+}
+
+function isOpenCalculatorShortcut(event) {
+  return isShortcutEvent(event, 'c', { allowShift: true }) && event.shiftKey;
 }
 
 function removeEntryRow(button) {
@@ -911,6 +915,15 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();
     const row = addEntryRow();
     focusFirstEditableField(row);
+    return;
+  }
+
+  if (isOpenCalculatorShortcut(event)) {
+    const row = getActiveEntryRow();
+    if (row) {
+      event.preventDefault();
+      toggleCalculator(row);
+    }
     return;
   }
 

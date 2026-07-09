@@ -46,7 +46,7 @@ body {
 }
 
 .panel-wide {
-  width: min(100%, 1360px);
+  width: min(100%, 1520px);
 }
 
 .eyebrow {
@@ -260,7 +260,7 @@ button.secondary {
 }
 
 .entry-col-description {
-  width: 180px;
+  width: 196px;
 }
 
 .entry-col-owner {
@@ -272,11 +272,11 @@ button.secondary {
 }
 
 .entry-col-amount {
-  width: 136px;
+  width: 208px;
 }
 
 .entry-col-note {
-  width: 126px;
+  width: 148px;
 }
 
 .entry-col-delete {
@@ -598,7 +598,7 @@ body.modal-open {
   }
 
   .entry-table {
-    min-width: 1120px;
+    min-width: 1320px;
     table-layout: fixed;
   }
 
@@ -638,6 +638,15 @@ body.modal-open {
     padding: 10px 12px;
     border-bottom: 1px solid var(--line);
     vertical-align: middle;
+  }
+
+  .entry-table input[name="amount"] {
+    min-width: 0;
+  }
+
+  .amount-input-wrap {
+    grid-template-columns: minmax(152px, 1fr) 44px;
+    gap: 10px;
   }
 
   .entry-table input[name="dateDisplay"] {

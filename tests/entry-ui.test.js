@@ -66,14 +66,17 @@ test('delete control is rendered as an icon button instead of text', () => {
 test('desktop table hides the delete header text while keeping explicit column widths', () => {
   assert.match(entryHtml, /<colgroup>[\s\S]*entry-col-date[\s\S]*entry-col-delete[\s\S]*<\/colgroup>/);
   assert.doesNotMatch(entryHtml, /<th scope="col">삭제<\/th>/);
+  assert.match(stylesCss, /\.panel-wide\s*\{[\s\S]*width:\s*min\(100%, 1520px\);/);
   assert.match(stylesCss, /\.entry-col-date\s*\{[\s\S]*width:\s*140px;/);
-  assert.match(stylesCss, /\.entry-col-description\s*\{[\s\S]*width:\s*180px;/);
+  assert.match(stylesCss, /\.entry-col-description\s*\{[\s\S]*width:\s*196px;/);
   assert.match(stylesCss, /\.entry-col-owner\s*\{[\s\S]*width:\s*118px;/);
-  assert.match(stylesCss, /\.entry-col-amount\s*\{[\s\S]*width:\s*136px;/);
+  assert.match(stylesCss, /\.entry-col-amount\s*\{[\s\S]*width:\s*208px;/);
+  assert.match(stylesCss, /\.entry-col-note\s*\{[\s\S]*width:\s*148px;/);
   assert.match(stylesCss, /\.entry-col-delete\s*\{[\s\S]*width:\s*56px;/);
   assert.match(stylesCss, /\.entry-table input\[name="amount"\]\s*\{[\s\S]*font-variant-numeric:\s*tabular-nums;/);
   assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table-wrap\s*\{[\s\S]*overflow-x:\s*auto;/);
-  assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table\s*\{[\s\S]*min-width:\s*1120px;/);
+  assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.entry-table\s*\{[\s\S]*min-width:\s*1320px;/);
+  assert.match(stylesCss, /@media \(min-width: 721px\)[\s\S]*\.amount-input-wrap\s*\{[\s\S]*minmax\(152px, 1fr\) 44px;/);
 });
 
 test('desktop date input uses a custom text-style short-year format instead of native date UI', () => {
@@ -97,6 +100,7 @@ test('amount row and page markup include a calculator trigger plus a separate fl
   assert.match(entryHtml, /id="calculator-window"/);
   assert.match(entryHtml, /aria-modal="true"/);
   assert.match(entryHtml, /id="calculator-row-context"/);
+  assert.match(entryHtml, />입력항목<\/div>/);
   assert.match(entryHtml, /id="calculator-announcements"/);
   assert.match(entryHtml, /id="calculator-display"/);
   assert.match(entryHtml, /id="calculator-apply-button"/);
@@ -122,12 +126,16 @@ test('calculator window logic opens independently from the table layout, highlig
   assert.match(entryJs, /const calculatorAnnouncements = document\.querySelector\("#calculator-announcements"\);/);
   assert.match(entryJs, /function announceCalculatorMessage\(/);
   assert.match(entryJs, /function getCalculatorFocusableElements\(/);
+  assert.match(entryJs, /function isOpenCalculatorShortcut\(event\) \{/);
+  assert.match(entryJs, /isShortcutEvent\(event, 'c', \{ allowShift: true \}\) && event\.shiftKey/);
   assert.match(entryJs, /row\.classList\.add\('calculator-active'\)/);
   assert.match(entryJs, /activeRow\?\.classList\.remove\('calculator-active'\)/);
-  assert.match(entryJs, /calculatorRowContext\.textContent = `입력 항목 \$\{row\.dataset\.rowIndex \|\| '\?'\}`/);
+  assert.match(entryJs, /calculatorDisplay\.value = amountValue \|\| '0';/);
+  assert.match(entryJs, /calculatorRowContext\.textContent = `입력항목 \$\{row\.dataset\.rowIndex \|\| '\?'\}`/);
   assert.match(entryJs, /announceCalculatorMessage\(`\$\{formattedAmount\}원 계산값이 금액 필드에 적용되었습니다\.`\)/);
   assert.match(entryJs, /closeCalculator\(\{ restoreFocus: false, clearStatus: false \}\)/);
   assert.match(entryJs, /if \(activeCalculatorRow && event\.key === 'Tab'\)/);
+  assert.match(entryJs, /if \(isOpenCalculatorShortcut\(event\)\) \{/);
   assert.match(entryJs, /state\.activeCalculatorRowId = row\.dataset\.rowId;/);
   assert.match(entryJs, /calculatorWindow\.addEventListener\("click", \(event\) => \{/);
   assert.match(entryJs, /document\.addEventListener\('click', \(event\) => \{/);
