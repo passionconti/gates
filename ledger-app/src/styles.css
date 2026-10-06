@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans KR", "Apple SD Gothic Neo", sans-serif;
+  --font-display: "Newsreader", "Iowan Old Style", serif;
+  --color-paper: #f4efe6;
+  --color-ink: #1c1917;
+  --color-muted: #78716c;
+  --color-line: #e4dcd0;
+  --color-card: #fffdf8;
+  --color-accent: #1d5c40;
+  --color-accent-soft: #e7f2ec;
+  --color-accent-fg: #f4f7f5;
+  --color-expense: #9a3412;
+  --color-expense-soft: #f8ebe4;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

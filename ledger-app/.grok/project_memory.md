@@ -1,0 +1,2 @@
+- Household ledger app based on passionconti/gates spreadsheet fields (date, type, category, description, owner, payment method, amount, note, actor). [2026-10-06]
+- Deliverable saved at artifacts/gates-ledger.html (client-side shared ledger, monthly/yearly stats). [2026-10-06]
